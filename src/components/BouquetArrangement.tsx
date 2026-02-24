@@ -29,46 +29,48 @@ const BouquetArrangement = ({ flowers, size = "md", layoutSeed = 7, greeneryStyl
   const positions = useMemo(() => {
     if (!flowers.length) return [] as Array<{ x: number; y: number; rotate: number; scale: number; z: number; flower: string }>;
 
+    // Sort: large flowers first (center), small ones outer
     const weighted = [...flowers].sort((a, b) => {
       const weight = { large: 3, medium: 2, small: 1 } as const;
       return weight[getTheme(b).sizeCategory] - weight[getTheme(a).sizeCategory];
     });
 
-    const centerSlots = [
-      { x: 50, y: 28 },
-      { x: 38, y: 34 },
-      { x: 62, y: 34 },
-      { x: 50, y: 40 },
+    const total = weighted.length;
+
+    // Pre-defined tight dome slots for up to 10 flowers
+    // Row 1 (back/top): spread wide but high
+    // Row 2 (middle): tighter
+    // Row 3 (front): closest, slightly lower
+    const allSlots = [
+      // Center-top (hero flowers)
+      { x: 50, y: 22, z: 25 },
+      { x: 36, y: 28, z: 22 },
+      { x: 64, y: 28, z: 22 },
+      // Middle ring
+      { x: 50, y: 35, z: 28 },
+      { x: 28, y: 34, z: 18 },
+      { x: 72, y: 34, z: 18 },
+      // Outer fill
+      { x: 42, y: 42, z: 30 },
+      { x: 58, y: 42, z: 30 },
+      { x: 32, y: 42, z: 16 },
+      { x: 68, y: 42, z: 16 },
     ];
 
     return weighted.map((flower, i) => {
-      const jitterX = (seeded(layoutSeed, i) - 0.5) * 8;
-      const jitterY = (seeded(layoutSeed + 13, i) - 0.5) * 6;
-      const rotate = (seeded(layoutSeed + 77, i) - 0.5) * 24;
-
-      if (i < centerSlots.length) {
-        const base = centerSlots[i];
-        return {
-          x: base.x + jitterX * 0.4,
-          y: base.y + jitterY * 0.4,
-          rotate,
-          scale: 1.02 - i * 0.03,
-          z: 20 - i,
-          flower,
-        };
-      }
-
-      const ringIndex = i - centerSlots.length;
-      const angle = (ringIndex / Math.max(1, flowers.length - centerSlots.length)) * Math.PI;
-      const radiusX = 30 + seeded(layoutSeed + 31, i) * 8;
-      const radiusY = 17 + seeded(layoutSeed + 55, i) * 7;
+      const slot = allSlots[i % allSlots.length];
+      const jitterX = (seeded(layoutSeed, i) - 0.5) * 6;
+      const jitterY = (seeded(layoutSeed + 13, i) - 0.5) * 4;
+      const rotate = (seeded(layoutSeed + 77, i) - 0.5) * 28;
+      const scaleBase = i < 3 ? 1.05 : i < 6 ? 0.95 : 0.88;
+      const scaleJitter = (seeded(layoutSeed + 99, i) - 0.5) * 0.1;
 
       return {
-        x: 50 + Math.cos(angle - Math.PI) * radiusX + jitterX,
-        y: 46 + Math.sin(angle - Math.PI) * radiusY + jitterY,
+        x: slot.x + jitterX,
+        y: slot.y + jitterY,
         rotate,
-        scale: 0.88 + seeded(layoutSeed + 99, i) * 0.18,
-        z: 10 + Math.round(40 - Math.sin(angle) * 10),
+        scale: scaleBase + scaleJitter,
+        z: slot.z,
         flower,
       };
     });
