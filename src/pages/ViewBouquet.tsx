@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Check, MessageCircle, Loader2 } from "lucide-react";
-import FlowerEmoji, { getTheme, getAllThemes } from "@/components/FlowerEmoji";
+import { getTheme, getAllThemes } from "@/components/FlowerEmoji";
 import BouquetArrangement from "@/components/BouquetArrangement";
 import PetalAnimation from "@/components/PetalAnimation";
 import { supabase } from "@/integrations/supabase/client";
+import { decodeBouquetThemePayload } from "@/lib/bouquetThemePayload";
 
 interface BouquetData {
   id: string;
@@ -14,6 +15,13 @@ interface BouquetData {
   theme: string;
   created_at: string;
 }
+
+const fallbackFlowers = (themeKey: string) => {
+  const allThemes = getAllThemes();
+  const accent = allThemes.find((t) => t.key !== themeKey);
+  const accentKey = accent?.key ?? "daisies";
+  return [themeKey, themeKey, accentKey, themeKey, accentKey, themeKey];
+};
 
 const ViewBouquet = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,11 +33,8 @@ const ViewBouquet = () => {
   useEffect(() => {
     const fetchBouquet = async () => {
       if (!id) return;
-      const { data, error } = await supabase
-        .from("bouquets")
-        .select("*")
-        .eq("id", id)
-        .single();
+
+      const { data, error } = await supabase.from("bouquets").select("*").eq("id", id).single();
 
       if (error || !data) {
         setNotFound(true);
@@ -38,6 +43,7 @@ const ViewBouquet = () => {
       }
       setLoading(false);
     };
+
     fetchBouquet();
   }, [id]);
 
@@ -53,6 +59,21 @@ const ViewBouquet = () => {
     const text = `💐 ${bouquet?.sender_name} sent a digital bouquet to ${bouquet?.receiver_name}! View it here: ${shareUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
+
+  const decodedTheme = useMemo(() => (bouquet ? decodeBouquetThemePayload(bouquet.theme) : null), [bouquet]);
+
+  const bouquetFlowers = useMemo(() => {
+    if (!bouquet) return [] as string[];
+
+    if (decodedTheme?.flowers) {
+      return Object.entries(decodedTheme.flowers).flatMap(([key, count]) => Array(count).fill(key));
+    }
+
+    return fallbackFlowers(bouquet.theme);
+  }, [bouquet, decodedTheme]);
+
+  const layoutSeed = decodedTheme?.layoutSeed ?? 7;
+  const greeneryStyle = decodedTheme?.greeneryStyle ?? "classic";
 
   if (loading) {
     return (
@@ -79,59 +100,35 @@ const ViewBouquet = () => {
     );
   }
 
-  // Build a mini bouquet from the theme
-  const theme = getTheme(bouquet.theme);
-  const bouquetEmojis = Array(5).fill(theme.emoji);
-  // Add some variety
-  const allThemes = getAllThemes();
-  const accent = allThemes.find(t => t.key !== bouquet.theme);
-  if (accent) {
-    bouquetEmojis[1] = accent.emoji;
-    bouquetEmojis[4] = accent.emoji;
-  }
-
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <PetalAnimation count={20} />
 
-      <div className="relative z-10 max-w-lg mx-auto px-4 py-8 flex flex-col items-center min-h-screen justify-center">
-        {/* Bouquet card */}
+      <div className="relative z-10 max-w-xl mx-auto px-4 py-8 flex flex-col items-center min-h-screen justify-center">
         <div className="w-full border border-border bg-card p-8 md:p-10 space-y-6">
-          {/* Bouquet */}
           <div className="flex justify-center">
-            <BouquetArrangement emojis={bouquetEmojis} size="md" />
+            <BouquetArrangement flowers={bouquetFlowers} size="md" layoutSeed={layoutSeed} greeneryStyle={greeneryStyle} />
           </div>
 
-          {/* To */}
           <div className="text-center space-y-1 animate-text-reveal animation-delay-200 opacity-0">
             <p className="font-mono-upper text-xs text-muted-foreground tracking-widest">A bouquet for</p>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-              {bouquet.receiver_name}
-            </h1>
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">{bouquet.receiver_name}</h1>
           </div>
 
-          {/* Message */}
           <div className="animate-text-reveal animation-delay-400 opacity-0">
             <div className="bg-muted/40 p-6">
-              <p className="font-body text-foreground/90 text-center leading-relaxed whitespace-pre-wrap">
-                "{bouquet.message}"
-              </p>
+              <p className="font-body text-foreground/90 text-center leading-relaxed whitespace-pre-wrap">"{bouquet.message}"</p>
             </div>
           </div>
 
-          {/* Sender */}
           <div className="text-center animate-text-reveal animation-delay-500 opacity-0">
             <p className="text-muted-foreground font-body text-sm">With love,</p>
-            <p className="font-display text-xl font-semibold text-foreground">
-              {bouquet.sender_name}
-            </p>
+            <p className="font-display text-xl font-semibold text-foreground">{bouquet.sender_name}</p>
           </div>
 
-          {/* Share section */}
           <div className="pt-4 border-t border-border space-y-3 animate-text-reveal animation-delay-600 opacity-0">
             <p className="font-mono-upper text-xs text-center text-muted-foreground tracking-widest">Share this bouquet</p>
-            
-            {/* Shareable link display */}
+
             <div className="flex items-center gap-2 bg-muted/50 p-3 border border-border">
               <input
                 type="text"
@@ -139,11 +136,7 @@ const ViewBouquet = () => {
                 value={shareUrl}
                 className="flex-1 bg-transparent text-xs text-muted-foreground font-body truncate focus:outline-none"
               />
-              <button
-                onClick={handleCopy}
-                className="shrink-0 p-2 hover:bg-muted transition-colors"
-                title="Copy link"
-              >
+              <button onClick={handleCopy} className="shrink-0 p-2 hover:bg-muted transition-colors" title="Copy link">
                 {copied ? <Check className="h-4 w-4 text-foreground" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
               </button>
             </div>
@@ -167,7 +160,6 @@ const ViewBouquet = () => {
           </div>
         </div>
 
-        {/* Create your own */}
         <div className="mt-8 text-center animate-text-reveal animation-delay-700 opacity-0">
           <Link to="/create">
             <button className="font-mono-upper text-xs tracking-widest text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">
