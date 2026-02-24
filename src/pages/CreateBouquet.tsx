@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { getAllThemes } from "@/components/FlowerEmoji";
+import BouquetArrangement from "@/components/BouquetArrangement";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -258,21 +259,7 @@ const CreateBouquet = () => {
 
           <div className="border border-border p-6 md:p-8 bg-card mb-6 text-center space-y-5">
             {/* Bouquet arrangement */}
-            <div className="flex flex-wrap justify-center gap-1">
-              {bouquetEmojis.map((e, i) => (
-                <span
-                  key={i}
-                  className="text-4xl md:text-5xl animate-bloom inline-block"
-                  style={{
-                    animationDelay: `${i * 0.08}s`,
-                    transform: `rotate(${(i - bouquetEmojis.length / 2) * 8}deg)`,
-                  }}
-                >
-                  {e}
-                </span>
-              ))}
-            </div>
-            <div className="text-2xl">🌿</div>
+            <BouquetArrangement emojis={bouquetEmojis} size="lg" />
 
             <p className="font-mono-upper text-xs text-muted-foreground tracking-widest">A bouquet for</p>
             <p className="font-display text-2xl font-bold text-foreground">{receiverName}</p>
