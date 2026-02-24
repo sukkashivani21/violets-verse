@@ -1,10 +1,16 @@
-const THEMES: Record<string, { emoji: string; name: string; colors: string }> = {
-  roses: { emoji: "🌹", name: "Red Roses", colors: "from-rose to-rose-light" },
-  sunflowers: { emoji: "🌻", name: "Sunflowers", colors: "from-gold to-peach" },
-  lavender: { emoji: "💜", name: "Lavender", colors: "from-lavender to-lavender-light" },
-  tulips: { emoji: "🌷", name: "Tulips", colors: "from-primary to-rose-light" },
-  daisies: { emoji: "🌼", name: "Daisies", colors: "from-cream to-peach" },
-  mixed: { emoji: "💐", name: "Mixed Bouquet", colors: "from-rose-light to-lavender-light" },
+const THEMES: Record<string, { emoji: string; name: string }> = {
+  roses: { emoji: "🌹", name: "Rose" },
+  sunflowers: { emoji: "🌻", name: "Sunflower" },
+  lavender: { emoji: "💜", name: "Lavender" },
+  tulips: { emoji: "🌷", name: "Tulip" },
+  daisies: { emoji: "🌼", name: "Daisy" },
+  mixed: { emoji: "💐", name: "Mixed" },
+  cherry: { emoji: "🌸", name: "Cherry Blossom" },
+  hibiscus: { emoji: "🌺", name: "Hibiscus" },
+  orchid: { emoji: "🪻", name: "Orchid" },
+  lotus: { emoji: "🪷", name: "Lotus" },
+  carnation: { emoji: "🏵️", name: "Carnation" },
+  lily: { emoji: "💮", name: "Lily" },
 };
 
 export const getTheme = (key: string) => THEMES[key] || THEMES.roses;
