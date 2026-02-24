@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Copy, Check, MessageCircle, Loader2 } from "lucide-react";
-import FlowerEmoji, { getTheme } from "@/components/FlowerEmoji";
+import FlowerEmoji, { getTheme, getAllThemes } from "@/components/FlowerEmoji";
+import BouquetArrangement from "@/components/BouquetArrangement";
 import PetalAnimation from "@/components/PetalAnimation";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -78,6 +79,17 @@ const ViewBouquet = () => {
     );
   }
 
+  // Build a mini bouquet from the theme
+  const theme = getTheme(bouquet.theme);
+  const bouquetEmojis = Array(5).fill(theme.emoji);
+  // Add some variety
+  const allThemes = getAllThemes();
+  const accent = allThemes.find(t => t.key !== bouquet.theme);
+  if (accent) {
+    bouquetEmojis[1] = accent.emoji;
+    bouquetEmojis[4] = accent.emoji;
+  }
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <PetalAnimation count={20} />
@@ -85,9 +97,9 @@ const ViewBouquet = () => {
       <div className="relative z-10 max-w-lg mx-auto px-4 py-8 flex flex-col items-center min-h-screen justify-center">
         {/* Bouquet card */}
         <div className="w-full border border-border bg-card p-8 md:p-10 space-y-6">
-          {/* Flower */}
-          <div className="text-center">
-            <FlowerEmoji theme={bouquet.theme} size="text-7xl md:text-8xl" />
+          {/* Bouquet */}
+          <div className="flex justify-center">
+            <BouquetArrangement emojis={bouquetEmojis} size="md" />
           </div>
 
           {/* To */}
