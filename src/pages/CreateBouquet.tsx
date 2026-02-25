@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Copy, Check, Shuffle, Leaf } from "lucide-react";
+import { Copy, Check, Shuffle, Leaf } from "lucide-react";
 import FlowerEmoji, { getAllThemes } from "@/components/FlowerEmoji";
 import BouquetArrangement from "@/components/BouquetArrangement";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { encodeBouquetThemePayload } from "@/lib/bouquetThemePayload";
+import { encodeBouquetUrl } from "@/lib/bouquetUrlCodec";
 
 type Step = 1 | 2 | 3 | 4;
 type GreeneryStyle = "classic" | "wild" | "eucalyptus";
@@ -13,15 +12,6 @@ type GreeneryStyle = "classic" | "wild" | "eucalyptus";
 const MIN_FLOWERS = 6;
 const MAX_FLOWERS = 10;
 const GREENERY_STYLES: GreeneryStyle[] = ["classic", "wild", "eucalyptus"];
-
-const generateId = () => {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < 8; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
-};
 
 const countToFlowerKeys = (selection: Record<string, number>) =>
   Object.entries(selection).flatMap(([key, count]) => Array(count).fill(key));
@@ -43,8 +33,7 @@ const CreateBouquet = () => {
     layoutSeed: number;
     greeneryStyle: GreeneryStyle;
   } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
   const totalFlowers = Object.values(selectedFlowers).reduce((a, b) => a + b, 0);
@@ -85,7 +74,6 @@ const CreateBouquet = () => {
 
   const currentDesign = frozenDesign ?? { flowers: selectedFlowers, layoutSeed, greeneryStyle };
   const bouquetFlowerKeys = countToFlowerKeys(currentDesign.flowers);
-  const shareUrl = createdId && typeof window !== "undefined" ? `${window.location.origin}/bouquet/${createdId}` : "";
 
   const proceedToCustomize = () => {
     if (totalFlowers < MIN_FLOWERS) {
@@ -96,11 +84,7 @@ const CreateBouquet = () => {
   };
 
   const proceedToCard = () => {
-    setFrozenDesign({
-      flowers: selectedFlowers,
-      layoutSeed,
-      greeneryStyle,
-    });
+    setFrozenDesign({ flowers: selectedFlowers, layoutSeed, greeneryStyle });
     setStep(3);
   };
 
@@ -119,55 +103,20 @@ const CreateBouquet = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = async () => {
+  const handleSend = () => {
     if (!frozenDesign) return;
-    setLoading(true);
 
-    const id = generateId();
-    const sorted = Object.entries(frozenDesign.flowers).sort((a, b) => b[1] - a[1]);
-    const dominantTheme = sorted[0]?.[0] || "roses";
-
-    const encodedTheme = encodeBouquetThemePayload({
-      v: 2,
+    const encoded = encodeBouquetUrl({
+      senderName: senderName.trim(),
+      receiverName: receiverName.trim(),
+      message: message.trim(),
       flowers: frozenDesign.flowers,
       layoutSeed: frozenDesign.layoutSeed,
       greeneryStyle: frozenDesign.greeneryStyle,
-      dominant: dominantTheme,
     });
 
-    try {
-      let attempt = 0;
-      let error: { message?: string } | null = null;
-
-      while (attempt < 2) {
-        const { error: insertError } = await supabase.from("bouquets").insert({
-          id,
-          sender_name: senderName.trim(),
-          receiver_name: receiverName.trim(),
-          message: message.trim(),
-          theme: encodedTheme,
-        });
-
-        if (!insertError) {
-          setCreatedId(id);
-          setLoading(false);
-          return;
-        }
-
-        error = insertError;
-        attempt += 1;
-      }
-
-      toast({ title: "Could not create bouquet", description: error?.message ?? "Please try again.", variant: "destructive" });
-      setLoading(false);
-    } catch {
-      toast({
-        title: "Network error",
-        description: "Failed to reach the backend. Please try again in a few seconds.",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
+    const url = `${window.location.origin}/bouquet?data=${encoded}`;
+    setShareUrl(url);
   };
 
   return (
@@ -261,16 +210,10 @@ const CreateBouquet = () => {
             </div>
 
             <div className="mt-6 flex justify-center gap-3">
-              <button
-                onClick={() => setStep(1)}
-                className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setStep(1)} className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors">
                 Back
               </button>
-              <button
-                onClick={proceedToCard}
-                className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity"
-              >
+              <button onClick={proceedToCard} className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity">
                 Write card
               </button>
             </div>
@@ -283,12 +226,7 @@ const CreateBouquet = () => {
 
             <div className="grid md:grid-cols-[1fr_1.1fr] gap-4">
               <div className="border border-border bg-card p-5">
-                <BouquetArrangement
-                  flowers={bouquetFlowerKeys}
-                  size="md"
-                  layoutSeed={currentDesign.layoutSeed}
-                  greeneryStyle={currentDesign.greeneryStyle}
-                />
+                <BouquetArrangement flowers={bouquetFlowerKeys} size="md" layoutSeed={currentDesign.layoutSeed} greeneryStyle={currentDesign.greeneryStyle} />
               </div>
 
               <div className="border border-border bg-card p-6">
@@ -331,16 +269,10 @@ const CreateBouquet = () => {
             </div>
 
             <div className="mt-6 flex justify-center gap-3">
-              <button
-                onClick={() => setStep(2)}
-                className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setStep(2)} className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors">
                 Back
               </button>
-              <button
-                onClick={proceedToFinal}
-                className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity"
-              >
+              <button onClick={proceedToFinal} className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity">
                 Final preview
               </button>
             </div>
@@ -353,12 +285,7 @@ const CreateBouquet = () => {
 
             <div className="border border-border bg-card p-6 md:p-8 space-y-6">
               <div className="flex justify-center">
-                <BouquetArrangement
-                  flowers={bouquetFlowerKeys}
-                  size="lg"
-                  layoutSeed={currentDesign.layoutSeed}
-                  greeneryStyle={currentDesign.greeneryStyle}
-                />
+                <BouquetArrangement flowers={bouquetFlowerKeys} size="lg" layoutSeed={currentDesign.layoutSeed} greeneryStyle={currentDesign.greeneryStyle} />
               </div>
 
               <div className="bg-muted/40 p-5 text-center space-y-2">
@@ -369,26 +296,21 @@ const CreateBouquet = () => {
               </div>
             </div>
 
-            {!createdId ? (
+            {!shareUrl ? (
               <div className="mt-6 flex justify-center gap-3">
-                <button
-                  onClick={() => setStep(3)}
-                  className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors"
-                >
+                <button onClick={() => setStep(3)} className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors">
                   Back
                 </button>
                 <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                  onClick={handleSend}
+                  className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity"
                 >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {loading ? "Sending..." : "Send bouquet"}
+                  Send bouquet
                 </button>
               </div>
             ) : (
               <div className="mt-6 space-y-3">
-                <p className="text-center font-mono-upper text-[10px] tracking-widest text-muted-foreground">Permanent shareable URL</p>
+                <p className="text-center font-mono-upper text-[10px] tracking-widest text-muted-foreground">Shareable link (no account needed!)</p>
                 <div className="flex items-center gap-2 bg-muted/50 p-3 border border-border">
                   <input
                     type="text"
@@ -402,13 +324,13 @@ const CreateBouquet = () => {
                 </div>
                 <div className="flex justify-center gap-3">
                   <button
-                    onClick={() => navigate(`/bouquet/${createdId}`)}
+                    onClick={() => navigate(`/bouquet?data=${encodeBouquetUrl({ senderName: senderName.trim(), receiverName: receiverName.trim(), message: message.trim(), flowers: frozenDesign!.flowers, layoutSeed: frozenDesign!.layoutSeed, greeneryStyle: frozenDesign!.greeneryStyle })}`)}
                     className="py-3 px-8 border border-border font-mono-upper text-xs tracking-widest text-foreground hover:bg-muted transition-colors"
                   >
                     Open bouquet page
                   </button>
                   <button
-                    onClick={() => setStep(1)}
+                    onClick={() => { setShareUrl(""); setStep(1); setSelectedFlowers({}); setFrozenDesign(null); setSenderName(""); setReceiverName(""); setMessage(""); }}
                     className="py-3 px-8 bg-foreground text-background font-mono-upper text-xs tracking-widest hover:opacity-90 transition-opacity"
                   >
                     Build another

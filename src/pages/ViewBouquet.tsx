@@ -1,51 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Copy, Check, MessageCircle, Loader2 } from "lucide-react";
-import { getTheme, getAllThemes } from "@/components/FlowerEmoji";
+import { useMemo, useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Copy, Check, MessageCircle } from "lucide-react";
 import BouquetArrangement from "@/components/BouquetArrangement";
 import PetalAnimation from "@/components/PetalAnimation";
-import { supabase } from "@/integrations/supabase/client";
-import { decodeBouquetThemePayload } from "@/lib/bouquetThemePayload";
-
-interface BouquetData {
-  id: string;
-  sender_name: string;
-  receiver_name: string;
-  message: string;
-  theme: string;
-  created_at: string;
-}
-
-const fallbackFlowers = (themeKey: string) => {
-  const allThemes = getAllThemes();
-  const accent = allThemes.find((t) => t.key !== themeKey);
-  const accentKey = accent?.key ?? "daisies";
-  return [themeKey, themeKey, accentKey, themeKey, accentKey, themeKey];
-};
+import { decodeBouquetUrl } from "@/lib/bouquetUrlCodec";
 
 const ViewBouquet = () => {
-  const { id } = useParams<{ id: string }>();
-  const [bouquet, setBouquet] = useState<BouquetData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [searchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const fetchBouquet = async () => {
-      if (!id) return;
+  const bouquet = useMemo(() => {
+    const data = searchParams.get("data");
+    if (!data) return null;
+    return decodeBouquetUrl(data);
+  }, [searchParams]);
 
-      const { data, error } = await supabase.from("bouquets").select("*").eq("id", id).single();
-
-      if (error || !data) {
-        setNotFound(true);
-      } else {
-        setBouquet(data as BouquetData);
-      }
-      setLoading(false);
-    };
-
-    fetchBouquet();
-  }, [id]);
+  const bouquetFlowers = useMemo(() => {
+    if (!bouquet) return [] as string[];
+    return Object.entries(bouquet.flowers).flatMap(([key, count]) =>
+      Array(count).fill(key)
+    );
+  }, [bouquet]);
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
 
@@ -56,34 +31,11 @@ const ViewBouquet = () => {
   };
 
   const handleWhatsApp = () => {
-    const text = `💐 ${bouquet?.sender_name} sent a digital bouquet to ${bouquet?.receiver_name}! View it here: ${shareUrl}`;
+    const text = `💐 ${bouquet?.senderName} sent a digital bouquet to ${bouquet?.receiverName}! View it here: ${shareUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const decodedTheme = useMemo(() => (bouquet ? decodeBouquetThemePayload(bouquet.theme) : null), [bouquet]);
-
-  const bouquetFlowers = useMemo(() => {
-    if (!bouquet) return [] as string[];
-
-    if (decodedTheme?.flowers) {
-      return Object.entries(decodedTheme.flowers).flatMap(([key, count]) => Array(count).fill(key));
-    }
-
-    return fallbackFlowers(bouquet.theme);
-  }, [bouquet, decodedTheme]);
-
-  const layoutSeed = decodedTheme?.layoutSeed ?? 7;
-  const greeneryStyle = decodedTheme?.greeneryStyle ?? "classic";
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-      </div>
-    );
-  }
-
-  if (notFound || !bouquet) {
+  if (!bouquet) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-4">
@@ -107,12 +59,17 @@ const ViewBouquet = () => {
       <div className="relative z-10 max-w-xl mx-auto px-4 py-8 flex flex-col items-center min-h-screen justify-center">
         <div className="w-full border border-border bg-card p-8 md:p-10 space-y-6">
           <div className="flex justify-center">
-            <BouquetArrangement flowers={bouquetFlowers} size="md" layoutSeed={layoutSeed} greeneryStyle={greeneryStyle} />
+            <BouquetArrangement
+              flowers={bouquetFlowers}
+              size="md"
+              layoutSeed={bouquet.layoutSeed ?? 7}
+              greeneryStyle={bouquet.greeneryStyle ?? "classic"}
+            />
           </div>
 
           <div className="text-center space-y-1 animate-text-reveal animation-delay-200 opacity-0">
             <p className="font-mono-upper text-xs text-muted-foreground tracking-widest">A bouquet for</p>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">{bouquet.receiver_name}</h1>
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">{bouquet.receiverName}</h1>
           </div>
 
           <div className="animate-text-reveal animation-delay-400 opacity-0">
@@ -123,7 +80,7 @@ const ViewBouquet = () => {
 
           <div className="text-center animate-text-reveal animation-delay-500 opacity-0">
             <p className="text-muted-foreground font-body text-sm">With love,</p>
-            <p className="font-display text-xl font-semibold text-foreground">{bouquet.sender_name}</p>
+            <p className="font-display text-xl font-semibold text-foreground">{bouquet.senderName}</p>
           </div>
 
           <div className="pt-4 border-t border-border space-y-3 animate-text-reveal animation-delay-600 opacity-0">
