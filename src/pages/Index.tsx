@@ -10,7 +10,7 @@ const Index = () => {
 
       {/* Title */}
       <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-foreground italic tracking-tight animate-text-reveal">
-        Digibouquet
+        Loved ones
       </h1>
 
       {/* Subtitle */}
