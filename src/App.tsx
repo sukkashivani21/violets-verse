@@ -19,7 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/create" element={<CreateBouquet />} />
-          <Route path="/bouquet/:id" element={<ViewBouquet />} />
+          <Route path="/bouquet" element={<ViewBouquet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
