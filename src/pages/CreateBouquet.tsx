@@ -123,7 +123,7 @@ const CreateBouquet = () => {
     <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto w-full max-w-3xl">
         <Link to="/" className="mb-7 inline-flex">
-          <h1 className="font-display text-3xl md:text-4xl font-bold italic text-foreground">Digibouquet</h1>
+          <h1 className="font-display text-3xl md:text-4xl font-bold italic text-foreground">Loved Ones</h1>
         </Link>
 
         {step === 1 && (
