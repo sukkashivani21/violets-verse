@@ -19,22 +19,45 @@ const seeded = (seed: number, n: number) => {
   return x - Math.floor(x);
 };
 
-/* ── Fan-shaped bouquet slots: flowers fan upward & outward ── */
-const bouquetSlots = [
-  // Top tier – crown flowers fanning out
-  { x: 50, y: 14, z: 30 },
-  { x: 34, y: 18, z: 28 },
-  { x: 66, y: 18, z: 28 },
-  // Mid tier – filling out the fan
-  { x: 22, y: 26, z: 24 },
-  { x: 42, y: 24, z: 26 },
-  { x: 58, y: 24, z: 26 },
-  { x: 78, y: 26, z: 24 },
-  // Lower tier – near the gathering point
-  { x: 30, y: 34, z: 22 },
-  { x: 50, y: 32, z: 25 },
-  { x: 70, y: 34, z: 22 },
-];
+/* Generate completely different fan positions per seed */
+const generateSlots = (seed: number, count: number) => {
+  const slots: { x: number; y: number; z: number }[] = [];
+  // Create a unique arrangement each time
+  const angleSpread = 55 + seeded(seed, 0) * 30; // 55-85 degree fan spread
+  const centerY = 42 + seeded(seed, 1) * 10; // vertical center offset
+  const radiusBase = 28 + seeded(seed, 2) * 14; // how far flowers spread
+
+  for (let i = 0; i < count; i++) {
+    // Distribute flowers in a fan/dome shape from bottom-center
+    const t = count > 1 ? i / (count - 1) : 0.5;
+    const angle = (-angleSpread / 2 + t * angleSpread) * (Math.PI / 180);
+    
+    // Multiple rings - inner flowers closer to center
+    const ring = seeded(seed + 50, i * 7) > 0.45 ? 1 : 0;
+    const radius = radiusBase * (0.55 + ring * 0.45) * (0.8 + seeded(seed + 30, i * 5) * 0.4);
+    
+    const baseX = 50 + Math.sin(angle) * radius;
+    const baseY = centerY - Math.cos(angle) * radius * 0.7;
+    
+    // Significant jitter per seed
+    const jX = (seeded(seed + 200, i * 3) - 0.5) * 18;
+    const jY = (seeded(seed + 300, i * 3 + 1) - 0.5) * 14;
+
+    slots.push({
+      x: Math.max(8, Math.min(92, baseX + jX)),
+      y: Math.max(6, Math.min(52, baseY + jY)),
+      z: 20 + Math.round((1 - (baseY + jY) / 60) * 10),
+    });
+  }
+
+  // Shuffle the slot assignment order based on seed
+  const indices = slots.map((_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(seeded(seed + 999, i) * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices.map(i => slots[i]);
+};
 
 const BouquetArrangement = ({
   flowers,
@@ -50,31 +73,27 @@ const BouquetArrangement = ({
     flowers.forEach((f) => (grouped[f] = (grouped[f] || 0) + 1));
 
     const sizeWeight = { large: 3, medium: 2, small: 1 } as const;
-    const sortedGroups = Object.entries(grouped).sort(([a, countA], [b, countB]) => {
-      const diff = sizeWeight[getTheme(b).sizeCategory] - sizeWeight[getTheme(a).sizeCategory];
-      return diff !== 0 ? diff : countB - countA;
+    const sortedGroups = Object.entries(grouped).sort(([a], [b]) => {
+      return sizeWeight[getTheme(b).sizeCategory] - sizeWeight[getTheme(a).sizeCategory];
     });
 
     const ordered = sortedGroups.flatMap(([key, count]) => Array(count).fill(key));
     const total = ordered.length;
+    const slots = generateSlots(layoutSeed, total);
 
     return ordered.map((flower, i) => {
-      const slot = bouquetSlots[i % bouquetSlots.length];
-      const jX = (seeded(layoutSeed, i * 3) - 0.5) * 6;
-      const jY = (seeded(layoutSeed + 11, i * 3) - 0.5) * 5;
-      // Flowers tilt outward from center for a fan effect
-      const centerOffset = (slot.x - 50) / 50; // -1 to 1
-      const tiltBase = centerOffset * 18;
-      const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 14;
+      const slot = slots[i];
+      const centerOffset = (slot.x - 50) / 50;
+      const tiltBase = centerOffset * 22;
+      const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 20;
       const rotate = tiltBase + tiltJ;
-      const scaleBase = i < 3 ? 1.05 : i < 7 ? 0.95 : 0.88;
-      const scaleJ = (seeded(layoutSeed + 99, i) - 0.5) * 0.08;
+      const scaleBase = 0.85 + seeded(layoutSeed + 99, i) * 0.25;
 
       return {
-        x: slot.x + jX,
-        y: slot.y + jY,
+        x: slot.x,
+        y: slot.y,
         rotate,
-        scale: scaleBase + scaleJ,
+        scale: scaleBase,
         z: slot.z + (total - i),
         flower,
       };
@@ -89,26 +108,12 @@ const BouquetArrangement = ({
         {/* ── Greenery SVG layer ── */}
         <div className="absolute inset-0 pointer-events-none">
           <svg viewBox="0 0 240 260" className="w-full h-full" aria-hidden>
-            {/* Stems converging to a gathering point */}
-            <g stroke="hsl(132 30% 34%)" strokeWidth="2" fill="none" strokeLinecap="round">
-              <path d="M120 250 Q108 180, 58 40" />
-              <path d="M120 250 Q132 180, 182 40" />
-              <path d="M120 250 Q116 175, 120 25" />
-              <path d="M120 250 Q100 170, 38 55" />
-              <path d="M120 250 Q140 170, 202 55" />
-              <path d="M120 250 Q112 185, 80 30" />
-              <path d="M120 250 Q128 185, 160 30" />
-              {greeneryStyle === "wild" && (
-                <>
-                  <path d="M120 250 Q85 160, 24 38" />
-                  <path d="M120 250 Q155 160, 216 38" />
-                </>
-              )}
-            </g>
+            {/* Stems converging to gathering point */}
+            <StemLines seed={layoutSeed} style={greeneryStyle} />
 
-            {greeneryStyle === "classic" && <ClassicLeaves />}
-            {greeneryStyle === "wild" && <WildLeaves />}
-            {greeneryStyle === "eucalyptus" && <EucalyptusLeaves />}
+            {greeneryStyle === "classic" && <ClassicLeaves seed={layoutSeed} />}
+            {greeneryStyle === "wild" && <WildLeaves seed={layoutSeed} />}
+            {greeneryStyle === "eucalyptus" && <EucalyptusLeaves seed={layoutSeed} />}
           </svg>
         </div>
 
@@ -131,40 +136,20 @@ const BouquetArrangement = ({
         {/* ── Wrap / tie point ── */}
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-30">
           <svg width="72" height="60" viewBox="0 0 72 60" aria-hidden>
-            {/* Kraft paper wrap – triangular, open top */}
             <path
               d="M8 6 L36 6 L64 6 L56 56 Q48 60 36 60 Q24 60 16 56 Z"
               fill="hsl(35 40% 78% / 0.85)"
               stroke="hsl(30 25% 55%)"
               strokeWidth="1.2"
             />
-            {/* Wrap texture lines */}
             <path d="M14 14 Q36 20, 58 14" fill="none" stroke="hsl(30 20% 60% / 0.5)" strokeWidth="0.8" />
             <path d="M18 28 Q36 32, 54 28" fill="none" stroke="hsl(30 20% 60% / 0.4)" strokeWidth="0.7" />
-            {/* Twine bow */}
             <path
               d="M26 12 Q30 6, 36 10 Q42 6, 46 12"
-              fill="none"
-              stroke="hsl(28 35% 42%)"
-              strokeWidth="2"
-              strokeLinecap="round"
+              fill="none" stroke="hsl(28 35% 42%)" strokeWidth="2" strokeLinecap="round"
             />
-            {/* Bow loops */}
-            <path
-              d="M26 12 Q20 8, 22 14 Q24 18, 28 13"
-              fill="none"
-              stroke="hsl(28 35% 42%)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M46 12 Q52 8, 50 14 Q48 18, 44 13"
-              fill="none"
-              stroke="hsl(28 35% 42%)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            {/* Dangling twine ends */}
+            <path d="M26 12 Q20 8, 22 14 Q24 18, 28 13" fill="none" stroke="hsl(28 35% 42%)" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M46 12 Q52 8, 50 14 Q48 18, 44 13" fill="none" stroke="hsl(28 35% 42%)" strokeWidth="1.5" strokeLinecap="round" />
             <path d="M30 13 Q28 20, 26 24" fill="none" stroke="hsl(28 35% 42%)" strokeWidth="1" strokeLinecap="round" />
             <path d="M42 13 Q44 20, 46 24" fill="none" stroke="hsl(28 35% 42%)" strokeWidth="1" strokeLinecap="round" />
           </svg>
@@ -174,122 +159,149 @@ const BouquetArrangement = ({
   );
 };
 
-/* ── Greenery sub-components – cascading around the bouquet fan ── */
+/* ── Seed-driven stem lines ── */
+const StemLines = ({ seed, style }: { seed: number; style: string }) => {
+  const stems = useMemo(() => {
+    const count = style === "wild" ? 9 : 7;
+    return Array.from({ length: count }, (_, i) => {
+      const spread = 35 + seeded(seed, i * 13) * 25;
+      const angle = (-spread + (i / (count - 1)) * spread * 2) * (Math.PI / 180);
+      const bendX = 120 + Math.sin(angle) * (60 + seeded(seed + 40, i) * 50);
+      const bendY = 80 + seeded(seed + 60, i) * 60;
+      const tipX = 120 + Math.sin(angle) * (90 + seeded(seed + 80, i) * 70);
+      const tipY = 20 + seeded(seed + 100, i) * 40;
+      return `M120 250 Q${bendX.toFixed(0)} ${bendY.toFixed(0)}, ${tipX.toFixed(0)} ${tipY.toFixed(0)}`;
+    });
+  }, [seed, style]);
 
-const ClassicLeaves = () => (
-  <g fill="hsl(138 34% 40% / 0.45)">
-    {/* Left cascading leaves */}
-    <ellipse cx="48" cy="44" rx="6" ry="18" transform="rotate(-35 48 44)" />
-    <ellipse cx="36" cy="65" rx="5" ry="15" transform="rotate(-42 36 65)" />
-    <ellipse cx="55" cy="80" rx="5" ry="13" transform="rotate(-20 55 80)" />
-    <ellipse cx="42" cy="100" rx="4" ry="12" transform="rotate(-50 42 100)" />
-    {/* Right cascading leaves */}
-    <ellipse cx="192" cy="44" rx="6" ry="18" transform="rotate(35 192 44)" />
-    <ellipse cx="204" cy="65" rx="5" ry="15" transform="rotate(42 204 65)" />
-    <ellipse cx="185" cy="80" rx="5" ry="13" transform="rotate(20 185 80)" />
-    <ellipse cx="198" cy="100" rx="4" ry="12" transform="rotate(50 198 100)" />
-    {/* Top crown accent */}
-    <ellipse cx="120" cy="28" rx="4" ry="16" transform="rotate(3 120 28)" />
-    <ellipse cx="90" cy="34" rx="5" ry="14" transform="rotate(-15 90 34)" />
-    <ellipse cx="150" cy="34" rx="5" ry="14" transform="rotate(15 150 34)" />
-    {/* Inner fill */}
-    <ellipse cx="75" cy="60" rx="4.5" ry="12" transform="rotate(-25 75 60)" />
-    <ellipse cx="165" cy="60" rx="4.5" ry="12" transform="rotate(25 165 60)" />
-    {/* Lower draping leaves */}
-    <ellipse cx="60" cy="120" rx="4" ry="11" transform="rotate(-55 60 120)" />
-    <ellipse cx="180" cy="120" rx="4" ry="11" transform="rotate(55 180 120)" />
-  </g>
-);
+  return (
+    <g stroke="hsl(132 30% 34%)" strokeWidth="2" fill="none" strokeLinecap="round">
+      {stems.map((d, i) => <path key={i} d={d} />)}
+    </g>
+  );
+};
 
-const WildLeaves = () => (
-  <g>
-    <g fill="hsl(130 38% 36% / 0.42)">
-      {/* Left wild spray */}
-      <ellipse cx="28" cy="42" rx="9" ry="22" transform="rotate(-48 28 42)" />
-      <ellipse cx="42" cy="55" rx="7" ry="18" transform="rotate(-30 42 55)" />
-      <ellipse cx="34" cy="78" rx="6" ry="15" transform="rotate(-55 34 78)" />
-      <ellipse cx="50" cy="95" rx="5" ry="13" transform="rotate(-38 50 95)" />
-      <ellipse cx="38" cy="115" rx="4.5" ry="12" transform="rotate(-60 38 115)" />
-      {/* Right wild spray */}
-      <ellipse cx="212" cy="42" rx="9" ry="22" transform="rotate(48 212 42)" />
-      <ellipse cx="198" cy="55" rx="7" ry="18" transform="rotate(30 198 55)" />
-      <ellipse cx="206" cy="78" rx="6" ry="15" transform="rotate(55 206 78)" />
-      <ellipse cx="190" cy="95" rx="5" ry="13" transform="rotate(38 190 95)" />
-      <ellipse cx="202" cy="115" rx="4.5" ry="12" transform="rotate(60 202 115)" />
-      {/* Center crown */}
-      <ellipse cx="120" cy="22" rx="5" ry="18" />
-      <ellipse cx="80" cy="38" rx="6" ry="16" transform="rotate(-18 80 38)" />
-      <ellipse cx="160" cy="38" rx="6" ry="16" transform="rotate(18 160 38)" />
-      {/* Inner fillers */}
-      <ellipse cx="100" cy="68" rx="5" ry="14" transform="rotate(-10 100 68)" />
-      <ellipse cx="140" cy="68" rx="5" ry="14" transform="rotate(10 140 68)" />
-    </g>
-    {/* Baby's breath dots scattered through the arrangement */}
-    <g fill="hsl(0 0% 96% / 0.55)">
-      <circle cx="30" cy="36" r="2.5" />
-      <circle cx="210" cy="36" r="2.5" />
-      <circle cx="50" cy="48" r="2" />
-      <circle cx="190" cy="48" r="2" />
-      <circle cx="38" cy="70" r="1.8" />
-      <circle cx="202" cy="70" r="1.8" />
-      <circle cx="68" cy="30" r="2" />
-      <circle cx="172" cy="30" r="2" />
-      <circle cx="55" cy="110" r="1.5" />
-      <circle cx="185" cy="110" r="1.5" />
-    </g>
-  </g>
-);
+/* ── Greenery sub-components – now seed-driven ── */
 
-const EucalyptusLeaves = () => (
-  <g>
-    {/* Branches draping outward */}
-    <g stroke="hsl(155 24% 42%)" strokeWidth="1.4" fill="none" strokeLinecap="round">
-      <path d="M54 36 Q42 65, 30 105" />
-      <path d="M186 36 Q198 65, 210 105" />
-      <path d="M78 42 Q68 70, 55 110" />
-      <path d="M162 42 Q172 70, 185 110" />
-      <path d="M120 24 Q118 50, 115 80" />
-      {/* Draping strands */}
-      <path d="M46 70 Q36 100, 28 135" />
-      <path d="M194 70 Q204 100, 212 135" />
+const ClassicLeaves = ({ seed }: { seed: number }) => {
+  const leaves = useMemo(() => {
+    const count = 14;
+    return Array.from({ length: count }, (_, i) => {
+      const side = i % 2 === 0 ? -1 : 1;
+      const t = i / count;
+      const cx = 120 + side * (30 + seeded(seed + 500, i) * 80);
+      const cy = 28 + t * 110 + (seeded(seed + 600, i) - 0.5) * 20;
+      const rx = 4 + seeded(seed + 700, i) * 4;
+      const ry = 10 + seeded(seed + 800, i) * 10;
+      const rot = side * (15 + seeded(seed + 900, i) * 40);
+      return { cx, cy, rx, ry, rot };
+    });
+  }, [seed]);
+
+  return (
+    <g fill="hsl(138 34% 40% / 0.45)">
+      {leaves.map((l, i) => (
+        <ellipse
+          key={i}
+          cx={l.cx}
+          cy={l.cy}
+          rx={l.rx}
+          ry={l.ry}
+          transform={`rotate(${l.rot.toFixed(1)} ${l.cx.toFixed(1)} ${l.cy.toFixed(1)})`}
+        />
+      ))}
     </g>
-    {/* Round coin leaves along branches */}
-    <g fill="hsl(158 32% 46% / 0.38)">
-      {/* Left outer branch */}
-      <circle cx="50" cy="40" r="7" />
-      <circle cx="44" cy="56" r="6.5" />
-      <circle cx="38" cy="72" r="6" />
-      <circle cx="33" cy="88" r="5.5" />
-      <circle cx="30" cy="102" r="5" />
-      {/* Right outer branch */}
-      <circle cx="190" cy="40" r="7" />
-      <circle cx="196" cy="56" r="6.5" />
-      <circle cx="202" cy="72" r="6" />
-      <circle cx="207" cy="88" r="5.5" />
-      <circle cx="210" cy="102" r="5" />
-      {/* Left inner */}
-      <circle cx="76" cy="44" r="6" />
-      <circle cx="70" cy="60" r="5.5" />
-      <circle cx="64" cy="76" r="5" />
-      <circle cx="58" cy="92" r="4.5" />
-      {/* Right inner */}
-      <circle cx="164" cy="44" r="6" />
-      <circle cx="170" cy="60" r="5.5" />
-      <circle cx="176" cy="76" r="5" />
-      <circle cx="182" cy="92" r="4.5" />
-      {/* Center */}
-      <circle cx="120" cy="26" r="5.5" />
-      <circle cx="118" cy="42" r="5" />
-      <circle cx="116" cy="58" r="4.5" />
-      {/* Draping leaves */}
-      <circle cx="42" cy="78" r="5" />
-      <circle cx="36" cy="94" r="4.5" />
-      <circle cx="30" cy="110" r="4" />
-      <circle cx="198" cy="78" r="5" />
-      <circle cx="204" cy="94" r="4.5" />
-      <circle cx="210" cy="110" r="4" />
+  );
+};
+
+const WildLeaves = ({ seed }: { seed: number }) => {
+  const leaves = useMemo(() => {
+    const count = 18;
+    return Array.from({ length: count }, (_, i) => {
+      const side = i % 2 === 0 ? -1 : 1;
+      const t = i / count;
+      const cx = 120 + side * (25 + seeded(seed + 1100, i) * 95);
+      const cy = 22 + t * 105 + (seeded(seed + 1200, i) - 0.5) * 18;
+      const rx = 5 + seeded(seed + 1300, i) * 6;
+      const ry = 12 + seeded(seed + 1400, i) * 12;
+      const rot = side * (20 + seeded(seed + 1500, i) * 45);
+      return { cx, cy, rx, ry, rot };
+    });
+  }, [seed]);
+
+  const dots = useMemo(() => {
+    return Array.from({ length: 14 }, (_, i) => {
+      const side = i % 2 === 0 ? -1 : 1;
+      const cx = 120 + side * (20 + seeded(seed + 2000, i) * 100);
+      const cy = 25 + seeded(seed + 2100, i) * 100;
+      const r = 1.5 + seeded(seed + 2200, i) * 1.5;
+      return { cx, cy, r };
+    });
+  }, [seed]);
+
+  return (
+    <g>
+      <g fill="hsl(130 38% 36% / 0.42)">
+        {leaves.map((l, i) => (
+          <ellipse
+            key={i}
+            cx={l.cx}
+            cy={l.cy}
+            rx={l.rx}
+            ry={l.ry}
+            transform={`rotate(${l.rot.toFixed(1)} ${l.cx.toFixed(1)} ${l.cy.toFixed(1)})`}
+          />
+        ))}
+      </g>
+      <g fill="hsl(0 0% 96% / 0.55)">
+        {dots.map((d, i) => (
+          <circle key={i} cx={d.cx} cy={d.cy} r={d.r} />
+        ))}
+      </g>
     </g>
-  </g>
-);
+  );
+};
+
+const EucalyptusLeaves = ({ seed }: { seed: number }) => {
+  const branches = useMemo(() => {
+    const count = 6;
+    return Array.from({ length: count }, (_, i) => {
+      const side = i % 2 === 0 ? -1 : 1;
+      const startX = 120 + side * (20 + seeded(seed + 3000, i) * 40);
+      const startY = 30 + seeded(seed + 3100, i) * 20;
+      const endX = startX + side * (30 + seeded(seed + 3200, i) * 50);
+      const endY = startY + 50 + seeded(seed + 3300, i) * 50;
+      const midX = (startX + endX) / 2 + side * seeded(seed + 3400, i) * 20;
+      const midY = (startY + endY) / 2;
+      return { d: `M${startX.toFixed(0)} ${startY.toFixed(0)} Q${midX.toFixed(0)} ${midY.toFixed(0)}, ${endX.toFixed(0)} ${endY.toFixed(0)}`, startX, startY, endX, endY };
+    });
+  }, [seed]);
+
+  const circles = useMemo(() => {
+    const result: { cx: number; cy: number; r: number }[] = [];
+    branches.forEach((b, bi) => {
+      const steps = 4 + Math.floor(seeded(seed + 3500, bi) * 3);
+      for (let j = 0; j < steps; j++) {
+        const t = (j + 1) / (steps + 1);
+        const cx = b.startX + (b.endX - b.startX) * t + (seeded(seed + 3600, bi * 10 + j) - 0.5) * 8;
+        const cy = b.startY + (b.endY - b.startY) * t + (seeded(seed + 3700, bi * 10 + j) - 0.5) * 6;
+        const r = 4 + seeded(seed + 3800, bi * 10 + j) * 4;
+        result.push({ cx, cy, r });
+      }
+    });
+    return result;
+  }, [seed, branches]);
+
+  return (
+    <g>
+      <g stroke="hsl(155 24% 42%)" strokeWidth="1.4" fill="none" strokeLinecap="round">
+        {branches.map((b, i) => <path key={i} d={b.d} />)}
+      </g>
+      <g fill="hsl(158 32% 46% / 0.38)">
+        {circles.map((c, i) => <circle key={i} cx={c.cx} cy={c.cy} r={c.r} />)}
+      </g>
+    </g>
+  );
+};
 
 export default BouquetArrangement;
