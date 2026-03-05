@@ -9,9 +9,9 @@ interface BouquetArrangementProps {
 }
 
 const sizeMap = {
-  sm: { container: "w-56 h-64", flower: 46 },
-  md: { container: "w-72 h-80", flower: 56 },
-  lg: { container: "w-80 h-[22rem]", flower: 66 },
+  sm: { container: "w-56 h-64", flower: 56 },
+  md: { container: "w-72 h-80", flower: 68 },
+  lg: { container: "w-80 h-[22rem]", flower: 78 },
 };
 
 const seeded = (seed: number, n: number) => {
@@ -36,8 +36,8 @@ const generateBouquetSlots = (seed: number, count: number) => {
   let ring = 1;
   while (placed < count) {
     const ringCount = Math.min(count - placed, 3 + ring * 2);
-    const radius = 9 + ring * 9 + seeded(seed + 5, ring) * 4;
-    const fanAngle = Math.min(170, 100 + ring * 25 + seeded(seed + 2, ring) * 20);
+    const radius = 7 + ring * 7 + seeded(seed + 5, ring) * 3;
+    const fanAngle = Math.min(160, 90 + ring * 22 + seeded(seed + 2, ring) * 18);
     const startAngle = -fanAngle / 2;
     const angleOffset = seeded(seed + 20, ring) * 18;
 
@@ -186,7 +186,7 @@ const BouquetArrangement = ({
       const tiltBase = centerOffset * 12;
       const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 10;
       const rotate = tiltBase + tiltJ;
-      const scaleBase = 0.88 + seeded(layoutSeed + 99, i) * 0.18;
+      const scaleBase = 0.95 + seeded(layoutSeed + 99, i) * 0.15;
 
       return {
         x: slot.x,
