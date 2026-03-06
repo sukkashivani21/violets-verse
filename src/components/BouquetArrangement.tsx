@@ -346,20 +346,22 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const sat = 25 + seeded(seed + 200, i) * 20;
       const light = 34 + seeded(seed + 250, i) * 16;
 
+      const leafSeed = seed + 3000 + i * 17;
       const d = style === "eucalyptus"
-        ? pointedLeaf(gx, gy, tipX, tipY, width * 0.8)
-        : tropicalLeaf(gx, gy, tipX, tipY, width);
+        ? pointedLeaf(gx, gy, tipX, tipY, width * 0.8, leafSeed)
+        : tropicalLeaf(gx, gy, tipX, tipY, width, leafSeed);
 
       if (!d) continue;
 
-      // Midrib
-      const f = (v: number) => v.toFixed(1);
-      const midrib = `M${f(gx)} ${f(gy)} L${f(gx + (tipX - gx) * 0.92)} ${f(gy + (tipY - gy) * 0.92)}`;
+      // Veins
+      const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 4000 + i * 13);
 
       result.push(
         <g key={`bl${i}`}>
           <path d={d} fill={`hsl(${hue} ${sat}% ${light}% / 0.55)`} stroke={`hsl(${hue} ${sat - 5}% ${light - 12}% / 0.45)`} strokeWidth="0.7" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light - 8}% / 0.4)`} strokeWidth="0.6" />
+          {veins.map((vd, vi) => (
+            <path key={vi} d={vd} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light - 8}% / ${vi === 0 ? 0.4 : 0.25})`} strokeWidth={vi === 0 ? "0.6" : "0.35"} strokeLinecap="round" />
+          ))}
         </g>
       );
     }
