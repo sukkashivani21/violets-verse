@@ -381,11 +381,11 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`fern${i}`} opacity="0.5">
-          {frondPaths.map((d, j) => (
-            <path key={j} d={d}
-              fill={j === 0 ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
+          {frondPaths.map((item, j) => (
+            <path key={j} d={item.d}
+              fill={item.isStem ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
               stroke={`hsl(${hue} 28% 38%)`}
-              strokeWidth={j === 0 ? "0.8" : "0.4"}
+              strokeWidth={item.isStem ? "0.8" : "0.4"}
               strokeLinecap="round"
             />
           ))}
