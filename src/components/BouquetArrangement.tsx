@@ -67,96 +67,157 @@ const generateBouquetSlots = (seed: number, count: number) => {
   return indices.map((i) => slots[i]);
 };
 
-/* ── SVG Leaf Path Generators ── */
+/* ── SVG Leaf Path Generators (sketchy / organic) ── */
 
-// Pointed botanical leaf with midrib and veins
-const pointedLeaf = (bx: number, by: number, tipX: number, tipY: number, width: number) => {
+const f = (v: number) => v.toFixed(1);
+
+// Wobble helper: adds hand-drawn jitter to a coordinate
+const wobble = (v: number, amount: number, seed: number, idx: number) =>
+  v + (seeded(seed, idx) - 0.5) * amount;
+
+// Generate a sketchy pointed leaf with asymmetric curves & serrated edges
+const pointedLeaf = (bx: number, by: number, tipX: number, tipY: number, width: number, leafSeed = 0) => {
   const dx = tipX - bx, dy = tipY - by;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 1) return "";
-  const nx = (-dy / len) * width, ny = (dx / len) * width;
-  const f = (v: number) => v.toFixed(1);
-  const m1x = bx + dx * 0.3 + nx * 1.1, m1y = by + dy * 0.3 + ny * 1.1;
-  const m2x = bx + dx * 0.7 + nx * 0.6, m2y = by + dy * 0.7 + ny * 0.6;
-  const m3x = bx + dx * 0.3 - nx * 1.1, m3y = by + dy * 0.3 - ny * 1.1;
-  const m4x = bx + dx * 0.7 - nx * 0.6, m4y = by + dy * 0.7 - ny * 0.6;
-  return `M${f(bx)} ${f(by)} C${f(m1x)} ${f(m1y)},${f(m2x)} ${f(m2y)},${f(tipX)} ${f(tipY)} C${f(m4x)} ${f(m4y)},${f(m3x)} ${f(m3y)},${f(bx)} ${f(by)}Z`;
+  const ux = dx / len, uy = dy / len;
+  const nx = -uy * width, ny = ux * width;
+
+  // Asymmetric bulge for natural look
+  const bulgeL = 0.95 + (seeded(leafSeed + 50, 0) - 0.5) * 0.3;
+  const bulgeR = 0.95 + (seeded(leafSeed + 51, 1) - 0.5) * 0.3;
+  const peakL = 0.28 + seeded(leafSeed + 52, 2) * 0.12; // where widest point is
+  const peakR = 0.28 + seeded(leafSeed + 53, 3) * 0.12;
+
+  // Left side control points (base → tip)
+  const l1x = bx + dx * peakL + nx * bulgeL * 1.15, l1y = by + dy * peakL + ny * bulgeL * 1.15;
+  const l2x = bx + dx * 0.72 + nx * 0.5 * bulgeL, l2y = by + dy * 0.72 + ny * 0.5 * bulgeL;
+  // Right side control points (tip → base)
+  const r1x = bx + dx * 0.72 - nx * 0.5 * bulgeR, r1y = by + dy * 0.72 - ny * 0.5 * bulgeR;
+  const r2x = bx + dx * peakR - nx * bulgeR * 1.15, r2y = by + dy * peakR - ny * bulgeR * 1.15;
+
+  // Wobble tip slightly
+  const wtx = wobble(tipX, 2, leafSeed + 60, 0);
+  const wty = wobble(tipY, 2, leafSeed + 61, 1);
+
+  return `M${f(bx)} ${f(by)} C${f(l1x)} ${f(l1y)},${f(l2x)} ${f(l2y)},${f(wtx)} ${f(wty)} C${f(r1x)} ${f(r1y)},${f(r2x)} ${f(r2y)},${f(bx)} ${f(by)}Z`;
 };
 
-// Round filler leaf (like a rounded leaf or hosta)
+// Generate vein paths for a leaf (midrib + side veins)
+const leafVeins = (bx: number, by: number, tipX: number, tipY: number, width: number, veinSeed = 0): string[] => {
+  const dx = tipX - bx, dy = tipY - by;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 8) return [];
+  const ux = dx / len, uy = dy / len;
+  const nx = -uy, ny = ux;
+  const veins: string[] = [];
+
+  // Midrib with slight curve
+  const midCtrlX = (bx + tipX) / 2 + nx * width * (seeded(veinSeed, 0) - 0.5) * 0.3;
+  const midCtrlY = (by + tipY) / 2 + ny * width * (seeded(veinSeed, 1) - 0.5) * 0.3;
+  veins.push(`M${f(bx)} ${f(by)} Q${f(midCtrlX)} ${f(midCtrlY)},${f(bx + dx * 0.92)} ${f(by + dy * 0.92)}`);
+
+  // Side veins branching from midrib
+  const veinCount = Math.max(2, Math.floor(len / 16));
+  for (let i = 1; i <= veinCount; i++) {
+    const t = 0.15 + (i / (veinCount + 1)) * 0.65;
+    const px = bx + dx * t, py = by + dy * t;
+    const side = i % 2 === 0 ? 1 : -1;
+    const vLen = width * (0.6 + seeded(veinSeed + 10, i) * 0.4) * (1 - t * 0.4);
+    const angle = side * (35 + seeded(veinSeed + 20, i) * 25) * (Math.PI / 180);
+    const vx = px + (nx * side * Math.cos(angle) + ux * Math.sin(angle)) * vLen;
+    const vy = py + (ny * side * Math.cos(angle) + uy * Math.sin(angle)) * vLen;
+    veins.push(`M${f(px)} ${f(py)} L${f(vx)} ${f(vy)}`);
+  }
+  return veins;
+};
+
+// Round filler leaf with organic shape
 const roundLeaf = (cx: number, cy: number, r: number, angle: number) => {
   const rad = (angle * Math.PI) / 180;
   const tx = cx + Math.sin(rad) * r * 1.3;
   const ty = cy - Math.cos(rad) * r * 1.3;
-  const w = r * 0.7;
-  return pointedLeaf(cx, cy, tx, ty, w);
+  const w = r * 0.75;
+  return pointedLeaf(cx, cy, tx, ty, w, Math.round(cx * 7 + cy * 13));
 };
 
-// Fern frond: central stem with small alternating leaflets
+// Fern frond: curved stem with alternating sketchy leaflets
 const fernFrond = (startX: number, startY: number, tipX: number, tipY: number, seed: number, idx: number) => {
-  const paths: string[] = [];
+  const paths: { d: string; isStem: boolean }[] = [];
   const dx = tipX - startX, dy = tipY - startY;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 1) return paths;
   const ux = dx / len, uy = dy / len;
   const nx = -uy, ny = ux;
-  const f = (v: number) => v.toFixed(1);
 
-  // Main stem
-  paths.push(`M${f(startX)} ${f(startY)} L${f(tipX)} ${f(tipY)}`);
+  // Curved main stem (not straight)
+  const stemBow = (seeded(seed + 800, idx) - 0.5) * 14;
+  const scx = (startX + tipX) / 2 + nx * stemBow;
+  const scy = (startY + tipY) / 2 + ny * stemBow;
+  paths.push({ d: `M${f(startX)} ${f(startY)} Q${f(scx)} ${f(scy)},${f(tipX)} ${f(tipY)}`, isStem: true });
 
-  // Leaflets
-  const count = 6 + Math.floor(seeded(seed + 800, idx) * 4);
+  // Leaflets with varied sizes
+  const count = 7 + Math.floor(seeded(seed + 810, idx) * 5);
   for (let i = 1; i < count; i++) {
     const t = i / count;
-    const px = startX + dx * t, py = startY + dy * t;
+    // Point on curved stem
+    const u2 = 1 - t;
+    const px = u2 * u2 * startX + 2 * u2 * t * scx + t * t * tipX;
+    const py = u2 * u2 * startY + 2 * u2 * t * scy + t * t * tipY;
     const side = i % 2 === 0 ? 1 : -1;
-    const leafLen = (1 - t * 0.6) * len * 0.25;
-    const lx = px + (nx * side + ux * 0.3) * leafLen;
-    const ly = py + (ny * side + uy * 0.3) * leafLen;
-    paths.push(`M${f(px)} ${f(py)} Q${f((px + lx) / 2 + side * nx * 3)} ${f((py + ly) / 2 + side * ny * 3)},${f(lx)} ${f(ly)}`);
+    const leafLen = (1 - t * 0.65) * len * 0.22 + seeded(seed + 820, idx * 20 + i) * 4;
+    const splay = 0.35 + seeded(seed + 830, idx * 20 + i) * 0.15;
+    const lx = px + (nx * side * (1 - splay) + ux * splay) * leafLen;
+    const ly = py + (ny * side * (1 - splay) + uy * splay) * leafLen;
+    // Tiny leaf shape
+    const leafW = leafLen * 0.3;
+    const ld = pointedLeaf(px, py, lx, ly, leafW, seed + 840 + i);
+    if (ld) paths.push({ d: ld, isStem: false });
   }
   return paths;
 };
 
-// Thin branchy leaf (like a delicate herb branch)
+// Thin branchy leaf (delicate herb) with organic curves
 const thinBranch = (startX: number, startY: number, tipX: number, tipY: number, seed: number, idx: number) => {
-  const paths: string[] = [];
+  const paths: { d: string; isStem: boolean }[] = [];
   const dx = tipX - startX, dy = tipY - startY;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 1) return paths;
   const ux = dx / len, uy = dy / len;
   const nx = -uy, ny = ux;
-  const f = (v: number) => v.toFixed(1);
 
-  // Curved main stem
-  const ctrlX = (startX + tipX) / 2 + nx * (10 + seeded(seed + 900, idx) * 10);
-  const ctrlY = (startY + tipY) / 2 + ny * (10 + seeded(seed + 901, idx) * 10);
-  paths.push(`M${f(startX)} ${f(startY)} Q${f(ctrlX)} ${f(ctrlY)},${f(tipX)} ${f(tipY)}`);
+  // S-curved main stem for organic feel
+  const bow1 = (seeded(seed + 900, idx) - 0.3) * 16;
+  const bow2 = (seeded(seed + 901, idx) - 0.7) * 12;
+  const c1x = startX + dx * 0.33 + nx * bow1;
+  const c1y = startY + dy * 0.33 + ny * bow1;
+  const c2x = startX + dx * 0.66 + nx * bow2;
+  const c2y = startY + dy * 0.66 + ny * bow2;
+  paths.push({ d: `M${f(startX)} ${f(startY)} C${f(c1x)} ${f(c1y)},${f(c2x)} ${f(c2y)},${f(tipX)} ${f(tipY)}`, isStem: true });
 
-  // Small leaves along the branch
-  const count = 4 + Math.floor(seeded(seed + 910, idx) * 3);
+  // Leaves along the S-curve
+  const count = 5 + Math.floor(seeded(seed + 910, idx) * 3);
   for (let i = 1; i <= count; i++) {
     const t = i / (count + 1);
-    const u = 1 - t;
-    const px = u * u * startX + 2 * u * t * ctrlX + t * t * tipX;
-    const py = u * u * startY + 2 * u * t * ctrlY + t * t * tipY;
+    // Cubic bezier point
+    const u2 = 1 - t;
+    const px = u2*u2*u2*startX + 3*u2*u2*t*c1x + 3*u2*t*t*c2x + t*t*t*tipX;
+    const py = u2*u2*u2*startY + 3*u2*u2*t*c1y + 3*u2*t*t*c2y + t*t*t*tipY;
     const side = i % 2 === 0 ? 1 : -1;
-    const leafSize = 6 + seeded(seed + 920, idx * 10 + i) * 5;
-    const lx = px + nx * side * leafSize;
-    const ly = py + ny * side * leafSize;
-    // Small pointed leaf
-    const w = leafSize * 0.35;
-    const ld = pointedLeaf(px, py, lx, ly, w);
-    if (ld) paths.push(ld);
+    const leafSize = 5 + seeded(seed + 920, idx * 10 + i) * 6;
+    const splay = 0.3 + seeded(seed + 930, idx * 10 + i) * 0.2;
+    const lx = px + (nx * side * (1 - splay) + ux * splay) * leafSize;
+    const ly = py + (ny * side * (1 - splay) + uy * splay) * leafSize;
+    const w = leafSize * 0.38;
+    const ld = pointedLeaf(px, py, lx, ly, w, seed + 940 + i);
+    if (ld) paths.push({ d: ld, isStem: false });
   }
   return paths;
 };
 
-// Tropical long leaf
-const tropicalLeaf = (bx: number, by: number, tipX: number, tipY: number, width: number) => {
-  // Wider leaf with a central fold line effect
-  return pointedLeaf(bx, by, tipX, tipY, width);
+// Tropical long leaf — wider, slightly asymmetric
+const tropicalLeaf = (bx: number, by: number, tipX: number, tipY: number, width: number, leafSeed = 0) => {
+  return pointedLeaf(bx, by, tipX, tipY, width * 1.1, leafSeed);
 };
 
 const BouquetArrangement = ({
@@ -285,20 +346,22 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const sat = 25 + seeded(seed + 200, i) * 20;
       const light = 34 + seeded(seed + 250, i) * 16;
 
+      const leafSeed = seed + 3000 + i * 17;
       const d = style === "eucalyptus"
-        ? pointedLeaf(gx, gy, tipX, tipY, width * 0.8)
-        : tropicalLeaf(gx, gy, tipX, tipY, width);
+        ? pointedLeaf(gx, gy, tipX, tipY, width * 0.8, leafSeed)
+        : tropicalLeaf(gx, gy, tipX, tipY, width, leafSeed);
 
       if (!d) continue;
 
-      // Midrib
-      const f = (v: number) => v.toFixed(1);
-      const midrib = `M${f(gx)} ${f(gy)} L${f(gx + (tipX - gx) * 0.92)} ${f(gy + (tipY - gy) * 0.92)}`;
+      // Veins
+      const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 4000 + i * 13);
 
       result.push(
         <g key={`bl${i}`}>
           <path d={d} fill={`hsl(${hue} ${sat}% ${light}% / 0.55)`} stroke={`hsl(${hue} ${sat - 5}% ${light - 12}% / 0.45)`} strokeWidth="0.7" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light - 8}% / 0.4)`} strokeWidth="0.6" />
+          {veins.map((vd, vi) => (
+            <path key={vi} d={vd} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light - 8}% / ${vi === 0 ? 0.4 : 0.25})`} strokeWidth={vi === 0 ? "0.6" : "0.35"} strokeLinecap="round" />
+          ))}
         </g>
       );
     }
@@ -318,11 +381,11 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`fern${i}`} opacity="0.5">
-          {frondPaths.map((d, j) => (
-            <path key={j} d={d}
-              fill={j === 0 ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
+          {frondPaths.map((item, j) => (
+            <path key={j} d={item.d}
+              fill={item.isStem ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
               stroke={`hsl(${hue} 28% 38%)`}
-              strokeWidth={j === 0 ? "0.8" : "0.4"}
+              strokeWidth={item.isStem ? "0.8" : "0.4"}
               strokeLinecap="round"
             />
           ))}
@@ -366,11 +429,11 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`branch${i}`} opacity="0.45">
-          {branchPaths.map((d, j) => (
-            <path key={j} d={d}
-              fill={j === 0 ? "none" : `hsl(${hue} 26% 42% / 0.3)`}
+          {branchPaths.map((item, j) => (
+            <path key={j} d={item.d}
+              fill={item.isStem ? "none" : `hsl(${hue} 26% 42% / 0.3)`}
               stroke={`hsl(${hue} 24% 36%)`}
-              strokeWidth={j === 0 ? "0.7" : "0.3"}
+              strokeWidth={item.isStem ? "0.7" : "0.3"}
               strokeLinecap="round"
             />
           ))}
