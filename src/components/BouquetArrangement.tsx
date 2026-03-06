@@ -429,11 +429,11 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`branch${i}`} opacity="0.45">
-          {branchPaths.map((d, j) => (
-            <path key={j} d={d}
-              fill={j === 0 ? "none" : `hsl(${hue} 26% 42% / 0.3)`}
+          {branchPaths.map((item, j) => (
+            <path key={j} d={item.d}
+              fill={item.isStem ? "none" : `hsl(${hue} 26% 42% / 0.3)`}
               stroke={`hsl(${hue} 24% 36%)`}
-              strokeWidth={j === 0 ? "0.7" : "0.3"}
+              strokeWidth={item.isStem ? "0.7" : "0.3"}
               strokeLinecap="round"
             />
           ))}
