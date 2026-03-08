@@ -356,9 +356,9 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const bigLeafCount = style === "wild" ? 12 : style === "eucalyptus" ? 10 : 9;
     for (let i = 0; i < bigLeafCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 18 + seeded(seed, i * 7) * 28;
-      const angle = side * (spread + i * 5) * (Math.PI / 180);
-      const len = 100 + seeded(seed + 100, i) * 120;
+      const spread = 12 + seeded(seed, i * 7) * 20;
+      const angle = side * (spread + i * 4) * (Math.PI / 180);
+      const len = 90 + seeded(seed + 100, i) * 100;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
       const width = style === "eucalyptus" ? 10 + seeded(seed + 150, i) * 8 : 12 + seeded(seed + 150, i) * 14;
