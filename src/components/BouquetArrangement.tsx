@@ -418,8 +418,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const fillerCount = style === "classic" ? 8 : style === "wild" ? 10 : 6;
     for (let i = 0; i < fillerCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const cx = 120 + side * (35 + seeded(seed + 600, i) * 60);
-      const cy = 40 + seeded(seed + 610, i) * 90;
+      const cx = 120 + side * (30 + seeded(seed + 600, i) * 45);
+      const cy = 30 + seeded(seed + 610, i) * 70;
       const r = 8 + seeded(seed + 620, i) * 8;
       const angle = side * (20 + seeded(seed + 630, i) * 60);
       const hue = style === "eucalyptus" ? 160 : 140;
