@@ -314,12 +314,7 @@ const BouquetArrangement = ({
           </div>
         ))}
 
-        {/* Front accent leaves */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>
-          <svg viewBox="0 0 240 280" className="w-full h-full" aria-hidden>
-            <FrontAccents seed={layoutSeed} style={greeneryStyle} />
-          </svg>
-        </div>
+        {/* Front accent leaves removed – all greenery stays behind flowers */}
 
         {/* Wrap / pot */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ zIndex: 40 }}>
