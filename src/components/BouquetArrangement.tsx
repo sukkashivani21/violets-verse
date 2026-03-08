@@ -314,12 +314,7 @@ const BouquetArrangement = ({
           </div>
         ))}
 
-        {/* Front accent leaves */}
-        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>
-          <svg viewBox="0 0 240 280" className="w-full h-full" aria-hidden>
-            <FrontAccents seed={layoutSeed} style={greeneryStyle} />
-          </svg>
-        </div>
+        {/* Front accent leaves removed – all greenery stays behind flowers */}
 
         {/* Wrap / pot */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ zIndex: 40 }}>
@@ -361,9 +356,9 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const bigLeafCount = style === "wild" ? 12 : style === "eucalyptus" ? 10 : 9;
     for (let i = 0; i < bigLeafCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 18 + seeded(seed, i * 7) * 28;
-      const angle = side * (spread + i * 5) * (Math.PI / 180);
-      const len = 100 + seeded(seed + 100, i) * 120;
+      const spread = 12 + seeded(seed, i * 7) * 20;
+      const angle = side * (spread + i * 4) * (Math.PI / 180);
+      const len = 90 + seeded(seed + 100, i) * 100;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
       const width = style === "eucalyptus" ? 10 + seeded(seed + 150, i) * 8 : 12 + seeded(seed + 150, i) * 14;
@@ -396,10 +391,10 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const fernCount = style === "wild" ? 4 : style === "eucalyptus" ? 2 : 3;
     for (let i = 0; i < fernCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 25 + seeded(seed + 500, i) * 35;
+      const spread = 18 + seeded(seed + 500, i) * 25;
       const angle = side * spread * (Math.PI / 180);
-      const len = 110 + seeded(seed + 510, i) * 80;
-      const tipX = gx + Math.sin(angle) * len * (0.7 + seeded(seed + 520, i) * 0.5);
+      const len = 95 + seeded(seed + 510, i) * 65;
+      const tipX = gx + Math.sin(angle) * len * (0.6 + seeded(seed + 520, i) * 0.4);
       const tipY = gy - Math.cos(angle) * len;
 
       const frondPaths = fernFrond(gx, gy, tipX, tipY, seed, i);
@@ -423,8 +418,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const fillerCount = style === "classic" ? 8 : style === "wild" ? 10 : 6;
     for (let i = 0; i < fillerCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const cx = 120 + side * (35 + seeded(seed + 600, i) * 60);
-      const cy = 40 + seeded(seed + 610, i) * 90;
+      const cx = 120 + side * (30 + seeded(seed + 600, i) * 45);
+      const cy = 30 + seeded(seed + 610, i) * 70;
       const r = 8 + seeded(seed + 620, i) * 8;
       const angle = side * (20 + seeded(seed + 630, i) * 60);
       const hue = style === "eucalyptus" ? 160 : 140;
@@ -445,8 +440,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const branchCount = style === "wild" ? 5 : 3;
     for (let i = 0; i < branchCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const angle = side * (20 + seeded(seed + 700, i) * 40) * (Math.PI / 180);
-      const len = 90 + seeded(seed + 710, i) * 70;
+      const angle = side * (15 + seeded(seed + 700, i) * 30) * (Math.PI / 180);
+      const len = 80 + seeded(seed + 710, i) * 55;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
 
