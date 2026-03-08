@@ -440,8 +440,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const branchCount = style === "wild" ? 5 : 3;
     for (let i = 0; i < branchCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const angle = side * (20 + seeded(seed + 700, i) * 40) * (Math.PI / 180);
-      const len = 90 + seeded(seed + 710, i) * 70;
+      const angle = side * (15 + seeded(seed + 700, i) * 30) * (Math.PI / 180);
+      const len = 80 + seeded(seed + 710, i) * 55;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
 
