@@ -391,10 +391,10 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
     const fernCount = style === "wild" ? 4 : style === "eucalyptus" ? 2 : 3;
     for (let i = 0; i < fernCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 25 + seeded(seed + 500, i) * 35;
+      const spread = 18 + seeded(seed + 500, i) * 25;
       const angle = side * spread * (Math.PI / 180);
-      const len = 110 + seeded(seed + 510, i) * 80;
-      const tipX = gx + Math.sin(angle) * len * (0.7 + seeded(seed + 520, i) * 0.5);
+      const len = 95 + seeded(seed + 510, i) * 65;
+      const tipX = gx + Math.sin(angle) * len * (0.6 + seeded(seed + 520, i) * 0.4);
       const tipY = gy - Math.cos(angle) * len;
 
       const frondPaths = fernFrond(gx, gy, tipX, tipY, seed, i);
