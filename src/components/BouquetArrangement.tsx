@@ -110,7 +110,7 @@ const pointedLeaf = (bx: number, by: number, tipX: number, tipY: number, width: 
   const dx = tipX - bx, dy = tipY - by;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 1) return "";
-  if (len > 18) return sketchyLeafPath(bx, by, tipX, tipY, width, leafSeed);
+  if (len > 18) return smoothLeafPath(bx, by, tipX, tipY, width, leafSeed);
 
   const ux = dx / len, uy = dy / len;
   const nxW = -uy * width, nyW = ux * width;
