@@ -273,7 +273,7 @@ const BouquetArrangement = ({
       const tiltBase = centerOffset * 12;
       const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 10;
       const rotate = tiltBase + tiltJ;
-      const scaleBase = 0.95 + seeded(layoutSeed + 99, i) * 0.15;
+      const scaleBase = 1.05 + seeded(layoutSeed + 99, i) * 0.15;
 
       return {
         x: slot.x,
