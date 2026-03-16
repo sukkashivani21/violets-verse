@@ -422,42 +422,4 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
   return <g>{elements}</g>;
 };
 
-/* ── Front accent leaves peeking between flowers ── */
-const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
-  const elements = useMemo(() => {
-    const result: JSX.Element[] = [];
-    const count = style === "wild" ? 7 : 5;
-
-    for (let i = 0; i < count; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const cx = 120 + side * (28 + seeded(seed + 2000, i) * 55);
-      const cy = 55 + seeded(seed + 2010, i) * 65;
-      const len = 14 + seeded(seed + 2020, i) * 12;
-      const angle = side * (30 + seeded(seed + 2030, i) * 50);
-      const rad = (angle * Math.PI) / 180;
-      const tipX = cx + Math.sin(rad) * len;
-      const tipY = cy - Math.cos(rad) * len;
-      const width = 4 + seeded(seed + 2040, i) * 3;
-
-      const hue = style === "eucalyptus" ? 150 : style === "wild" ? 120 : 130;
-      const d = pointedLeaf(cx, cy, tipX, tipY, width);
-      if (!d) continue;
-
-      const f = (v: number) => v.toFixed(1);
-      const midrib = `M${f(cx)} ${f(cy)} L${f(cx + (tipX - cx) * 0.85)} ${f(cy + (tipY - cy) * 0.85)}`;
-
-      result.push(
-        <g key={`fa${i}`}>
-          <path d={d} fill={`hsl(${hue} 32% 30% / 0.55)`} stroke={`hsl(${hue} 26% 22% / 0.35)`} strokeWidth="0.5" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} 24% 24% / 0.4)`} strokeWidth="0.4" />
-        </g>
-      );
-    }
-
-    return result;
-  }, [seed, style]);
-
-  return <g>{elements}</g>;
-};
-
 export default BouquetArrangement;
