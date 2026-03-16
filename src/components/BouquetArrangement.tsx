@@ -422,7 +422,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const cy = 30 + seeded(seed + 610, i) * 70;
       const r = 8 + seeded(seed + 620, i) * 8;
       const angle = side * (20 + seeded(seed + 630, i) * 60);
-      const hue = style === "eucalyptus" ? 160 : 140;
+      const hue = style === "eucalyptus" ? 150 : 132;
 
       const d = roundLeaf(cx, cy, r, angle);
       if (!d) continue;
