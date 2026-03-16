@@ -36,7 +36,7 @@ const generateBouquetSlots = (seed: number, count: number) => {
   let ring = 1;
   while (placed < count) {
     const ringCount = Math.min(count - placed, 3 + ring * 2);
-    const radius = 7 + ring * 7 + seeded(seed + 5, ring) * 3;
+    const radius = 5 + ring * 6 + seeded(seed + 5, ring) * 2;
     const fanAngle = Math.min(160, 90 + ring * 22 + seeded(seed + 2, ring) * 18);
     const startAngle = -fanAngle / 2;
     const angleOffset = seeded(seed + 20, ring) * 18;
