@@ -51,7 +51,7 @@ const generateBouquetSlots = (seed: number, count: number) => {
 
       slots.push({
         x: Math.max(14, Math.min(86, bx + jx)),
-        y: Math.max(10, Math.min(52, by + jy)),
+        y: Math.max(16, Math.min(58, by + jy)),
         z: 25 + ring * 2 + Math.round(seeded(seed + 400, placed) * 3),
       });
       placed++;
