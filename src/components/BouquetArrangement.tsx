@@ -350,141 +350,118 @@ const WrapSVG = () => (
   </svg>
 );
 
-/* ── Background foliage ── */
+/* ── Background foliage — long blade-like dark green leaves ── */
 const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
   const elements = useMemo(() => {
-    const gx = 120, gy = 225;
+    const gx = 120, gy = 240;
     const result: JSX.Element[] = [];
 
-    // Large pointed leaves fanning out
-    const bigLeafCount = style === "wild" ? 12 : style === "eucalyptus" ? 10 : 9;
-    for (let i = 0; i < bigLeafCount; i++) {
+    // Long blade-like leaves fanning out behind flowers (like reference)
+    const bladeCount = style === "wild" ? 16 : style === "eucalyptus" ? 12 : 14;
+    for (let i = 0; i < bladeCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 12 + seeded(seed, i * 7) * 20;
-      const angle = side * (spread + i * 4) * (Math.PI / 180);
-      const len = 90 + seeded(seed + 100, i) * 100;
+      const spread = 8 + seeded(seed, i * 7) * 28 + i * 3;
+      const angle = side * spread * (Math.PI / 180);
+      const len = 130 + seeded(seed + 100, i) * 90;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
-      const width = style === "eucalyptus" ? 10 + seeded(seed + 150, i) * 8 : 12 + seeded(seed + 150, i) * 14;
+      // Narrow blade width for that long grass/leaf look
+      const width = 6 + seeded(seed + 150, i) * 6;
 
-      const hue = style === "eucalyptus" ? 152 : style === "wild" ? 120 : 130;
-      const sat = 30 + seeded(seed + 200, i) * 25;
-      const light = 22 + seeded(seed + 250, i) * 22;
+      // Dark to medium green palette
+      const hue = style === "eucalyptus" ? 150 + seeded(seed + 160, i) * 10
+        : style === "wild" ? 118 + seeded(seed + 160, i) * 20
+        : 125 + seeded(seed + 160, i) * 18;
+      const sat = 40 + seeded(seed + 200, i) * 30;
+      const light = 18 + seeded(seed + 250, i) * 18;
 
       const leafSeed = seed + 3000 + i * 17;
-      const d = style === "eucalyptus"
-        ? pointedLeaf(gx, gy, tipX, tipY, width * 0.8, leafSeed)
-        : tropicalLeaf(gx, gy, tipX, tipY, width, leafSeed);
-
+      const d = sketchyLeafPath(gx, gy, tipX, tipY, width, leafSeed);
       if (!d) continue;
 
-      // Veins
       const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 4000 + i * 13);
 
       result.push(
         <g key={`bl${i}`}>
-          <path d={d} fill={`hsl(${hue} ${sat}% ${light}% / 0.55)`} stroke={`hsl(${hue} ${sat - 5}% ${light - 12}% / 0.45)`} strokeWidth="0.7" />
+          <path d={d} fill={`hsl(${hue} ${sat}% ${light}% / 0.85)`} stroke={`hsl(${hue} ${sat - 5}% ${light - 8}% / 0.6)`} strokeWidth="0.8" />
           {veins.map((vd, vi) => (
-            <path key={vi} d={vd} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light - 8}% / ${vi === 0 ? 0.4 : 0.25})`} strokeWidth={vi === 0 ? "0.6" : "0.35"} strokeLinecap="round" />
+            <path key={vi} d={vd} fill="none" stroke={`hsl(${hue} ${sat - 10}% ${light + 5}% / ${vi === 0 ? 0.35 : 0.2})`} strokeWidth={vi === 0 ? "0.5" : "0.3"} strokeLinecap="round" />
           ))}
         </g>
       );
     }
 
-    // Fern fronds (2-4 depending on style)
-    const fernCount = style === "wild" ? 4 : style === "eucalyptus" ? 2 : 3;
-    for (let i = 0; i < fernCount; i++) {
+    // A few broader leaves for variety
+    const broadCount = style === "wild" ? 5 : 3;
+    for (let i = 0; i < broadCount; i++) {
       const side = i % 2 === 0 ? -1 : 1;
-      const spread = 18 + seeded(seed + 500, i) * 25;
+      const spread = 15 + seeded(seed + 500, i) * 35;
       const angle = side * spread * (Math.PI / 180);
-      const len = 95 + seeded(seed + 510, i) * 65;
-      const tipX = gx + Math.sin(angle) * len * (0.6 + seeded(seed + 520, i) * 0.4);
-      const tipY = gy - Math.cos(angle) * len;
-
-      const frondPaths = fernFrond(gx, gy, tipX, tipY, seed, i);
-      const hue = style === "eucalyptus" ? 148 : 125;
-
-      result.push(
-        <g key={`fern${i}`} opacity="0.5">
-          {frondPaths.map((item, j) => (
-            <path key={j} d={item.d}
-              fill={item.isStem ? "none" : `hsl(${hue} 35% 30% / 0.4)`}
-              stroke={`hsl(${hue} 32% 28%)`}
-              strokeWidth={item.isStem ? "0.8" : "0.4"}
-              strokeLinecap="round"
-            />
-          ))}
-        </g>
-      );
-    }
-
-    // Round filler leaves scattered at edges
-    const fillerCount = style === "classic" ? 8 : style === "wild" ? 10 : 6;
-    for (let i = 0; i < fillerCount; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const cx = 120 + side * (30 + seeded(seed + 600, i) * 45);
-      const cy = 30 + seeded(seed + 610, i) * 70;
-      const r = 8 + seeded(seed + 620, i) * 8;
-      const angle = side * (20 + seeded(seed + 630, i) * 60);
-      const hue = style === "eucalyptus" ? 150 : 132;
-
-      const d = roundLeaf(cx, cy, r, angle);
-      if (!d) continue;
-
-      result.push(
-        <path key={`fill${i}`} d={d}
-          fill={`hsl(${hue} 32% 32% / 0.45)`}
-          stroke={`hsl(${hue} 26% 24% / 0.3)`}
-          strokeWidth="0.5"
-        />
-      );
-    }
-
-    // Thin decorative branches
-    const branchCount = style === "wild" ? 5 : 3;
-    for (let i = 0; i < branchCount; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const angle = side * (15 + seeded(seed + 700, i) * 30) * (Math.PI / 180);
-      const len = 80 + seeded(seed + 710, i) * 55;
+      const len = 110 + seeded(seed + 510, i) * 70;
       const tipX = gx + Math.sin(angle) * len;
       const tipY = gy - Math.cos(angle) * len;
+      const width = 14 + seeded(seed + 520, i) * 10;
 
-      const branchPaths = thinBranch(gx, gy, tipX, tipY, seed, i);
       const hue = style === "eucalyptus" ? 148 : 128;
+      const sat = 45 + seeded(seed + 530, i) * 20;
+      const light = 20 + seeded(seed + 540, i) * 14;
+
+      const d = sketchyLeafPath(gx, gy, tipX, tipY, width, seed + 5000 + i * 11);
+      if (!d) continue;
+      const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 5500 + i * 13);
 
       result.push(
-        <g key={`branch${i}`} opacity="0.45">
-          {branchPaths.map((item, j) => (
-            <path key={j} d={item.d}
-              fill={item.isStem ? "none" : `hsl(${hue} 30% 32% / 0.4)`}
-              stroke={`hsl(${hue} 28% 26%)`}
-              strokeWidth={item.isStem ? "0.7" : "0.3"}
-              strokeLinecap="round"
-            />
+        <g key={`broad${i}`}>
+          <path d={d} fill={`hsl(${hue} ${sat}% ${light}% / 0.8)`} stroke={`hsl(${hue} ${sat}% ${light - 8}% / 0.5)`} strokeWidth="0.7" />
+          {veins.map((vd, vi) => (
+            <path key={vi} d={vd} fill="none" stroke={`hsl(${hue} ${sat - 8}% ${light + 6}% / ${vi === 0 ? 0.3 : 0.18})`} strokeWidth={vi === 0 ? "0.5" : "0.3"} strokeLinecap="round" />
           ))}
         </g>
+      );
+    }
+
+    // Thin wispy accent strands (like the purple/lavender wisps in reference)
+    const wispCount = style === "wild" ? 8 : 5;
+    for (let i = 0; i < wispCount; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      const spread = 20 + seeded(seed + 700, i) * 40;
+      const angle = side * spread * (Math.PI / 180);
+      const len = 120 + seeded(seed + 710, i) * 80;
+      const tipX = gx + Math.sin(angle) * len;
+      const tipY = gy - Math.cos(angle) * len;
+      const bow = (seeded(seed + 720, i) - 0.5) * 30;
+      const mx = (gx + tipX) / 2 + Math.cos(angle) * bow;
+      const my = (gy + tipY) / 2 + Math.sin(angle) * bow;
+
+      const hue = style === "eucalyptus" ? 155 : 135;
+      result.push(
+        <path key={`wisp${i}`}
+          d={`M${f(gx)} ${f(gy)} Q${f(mx)} ${f(my)},${f(tipX)} ${f(tipY)}`}
+          fill="none"
+          stroke={`hsl(${hue} 25% 30% / 0.4)`}
+          strokeWidth="1"
+          strokeLinecap="round"
+        />
       );
     }
 
     // Style-specific accents
     if (style === "wild") {
-      // Baby's breath dots
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 15; i++) {
         const side = i % 2 === 0 ? -1 : 1;
-        const cx = 120 + side * (20 + seeded(seed + 1000, i) * 80);
-        const cy = 25 + seeded(seed + 1010, i) * 90;
-        const r = 1.2 + seeded(seed + 1020, i) * 1.8;
+        const cx = 120 + side * (25 + seeded(seed + 1000, i) * 70);
+        const cy = 20 + seeded(seed + 1010, i) * 80;
+        const r = 1.2 + seeded(seed + 1020, i) * 1.5;
         result.push(
           <g key={`bb${i}`}>
-            <circle cx={cx} cy={cy} r={r} fill="hsl(0 0% 97% / 0.7)" />
-            <circle cx={cx} cy={cy} r={r * 0.35} fill="hsl(48 60% 68% / 0.5)" />
+            <circle cx={cx} cy={cy} r={r} fill="hsl(0 0% 97% / 0.6)" />
+            <circle cx={cx} cy={cy} r={r * 0.35} fill="hsl(48 60% 68% / 0.4)" />
           </g>
         );
       }
     }
 
     if (style === "eucalyptus") {
-      // Eucalyptus coin leaves on branches
       for (let i = 0; i < 4; i++) {
         const side = i % 2 === 0 ? -1 : 1;
         const sx = gx + side * (8 + seeded(seed + 1100, i) * 20);
@@ -493,7 +470,6 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
         const ctrlX = (sx + ex) / 2 + side * seeded(seed + 1130, i) * 18;
         const ctrlY = 100 + seeded(seed + 1140, i) * 30;
 
-        const f = (v: number) => v.toFixed(1);
         const branchD = `M${f(sx)} ${f(gy)} Q${f(ctrlX)} ${f(ctrlY)},${f(ex)} ${f(ey)}`;
 
         const coins: JSX.Element[] = [];
@@ -508,16 +484,16 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
           const cr = 4 + seeded(seed + 1170, i * 10 + j) * 4;
           coins.push(
             <circle key={j} cx={px + lside * off} cy={py} r={cr}
-              fill="hsl(158 30% 52% / 0.3)"
-              stroke="hsl(158 20% 38% / 0.2)"
+              fill="hsl(158 30% 40% / 0.35)"
+              stroke="hsl(158 20% 30% / 0.25)"
               strokeWidth="0.4"
             />
           );
         }
 
         result.push(
-          <g key={`euc${i}`} opacity="0.55">
-            <path d={branchD} fill="none" stroke="hsl(155 24% 38%)" strokeWidth="1" strokeLinecap="round" />
+          <g key={`euc${i}`} opacity="0.6">
+            <path d={branchD} fill="none" stroke="hsl(155 30% 28%)" strokeWidth="1" strokeLinecap="round" />
             {coins}
           </g>
         );
