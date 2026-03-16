@@ -9,9 +9,9 @@ interface BouquetArrangementProps {
 }
 
 const sizeMap = {
-  sm: { container: "w-56 h-64", flower: 56 },
-  md: { container: "w-72 h-80", flower: 68 },
-  lg: { container: "w-80 h-[22rem]", flower: 78 },
+  sm: { container: "w-56 h-64", flower: 66 },
+  md: { container: "w-72 h-80", flower: 80 },
+  lg: { container: "w-80 h-[22rem]", flower: 90 },
 };
 
 const seeded = (seed: number, n: number) => {
@@ -23,7 +23,7 @@ const seeded = (seed: number, n: number) => {
 const generateBouquetSlots = (seed: number, count: number) => {
   const slots: { x: number; y: number; z: number }[] = [];
   const cx = 50;
-  const cy = 42;
+  const cy = 48;
 
   if (count === 1) {
     slots.push({ x: cx, y: cy, z: 30 });
@@ -36,7 +36,7 @@ const generateBouquetSlots = (seed: number, count: number) => {
   let ring = 1;
   while (placed < count) {
     const ringCount = Math.min(count - placed, 3 + ring * 2);
-    const radius = 7 + ring * 7 + seeded(seed + 5, ring) * 3;
+    const radius = 5 + ring * 6 + seeded(seed + 5, ring) * 2;
     const fanAngle = Math.min(160, 90 + ring * 22 + seeded(seed + 2, ring) * 18);
     const startAngle = -fanAngle / 2;
     const angleOffset = seeded(seed + 20, ring) * 18;
@@ -51,7 +51,7 @@ const generateBouquetSlots = (seed: number, count: number) => {
 
       slots.push({
         x: Math.max(14, Math.min(86, bx + jx)),
-        y: Math.max(10, Math.min(52, by + jy)),
+        y: Math.max(16, Math.min(58, by + jy)),
         z: 25 + ring * 2 + Math.round(seeded(seed + 400, placed) * 3),
       });
       placed++;
@@ -273,7 +273,7 @@ const BouquetArrangement = ({
       const tiltBase = centerOffset * 12;
       const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 10;
       const rotate = tiltBase + tiltJ;
-      const scaleBase = 0.95 + seeded(layoutSeed + 99, i) * 0.15;
+      const scaleBase = 1.05 + seeded(layoutSeed + 99, i) * 0.15;
 
       return {
         x: slot.x,
@@ -363,9 +363,9 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
       const width = style === "eucalyptus" ? 10 + seeded(seed + 150, i) * 8 : 12 + seeded(seed + 150, i) * 14;
 
-      const hue = style === "eucalyptus" ? 158 : style === "wild" ? 125 : 138;
-      const sat = 25 + seeded(seed + 200, i) * 20;
-      const light = 34 + seeded(seed + 250, i) * 16;
+      const hue = style === "eucalyptus" ? 152 : style === "wild" ? 120 : 130;
+      const sat = 30 + seeded(seed + 200, i) * 25;
+      const light = 22 + seeded(seed + 250, i) * 22;
 
       const leafSeed = seed + 3000 + i * 17;
       const d = style === "eucalyptus"
@@ -398,14 +398,14 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
 
       const frondPaths = fernFrond(gx, gy, tipX, tipY, seed, i);
-      const hue = style === "eucalyptus" ? 155 : 130;
+      const hue = style === "eucalyptus" ? 148 : 125;
 
       result.push(
         <g key={`fern${i}`} opacity="0.5">
           {frondPaths.map((item, j) => (
             <path key={j} d={item.d}
-              fill={item.isStem ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
-              stroke={`hsl(${hue} 28% 38%)`}
+              fill={item.isStem ? "none" : `hsl(${hue} 35% 30% / 0.4)`}
+              stroke={`hsl(${hue} 32% 28%)`}
               strokeWidth={item.isStem ? "0.8" : "0.4"}
               strokeLinecap="round"
             />
@@ -422,15 +422,15 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const cy = 30 + seeded(seed + 610, i) * 70;
       const r = 8 + seeded(seed + 620, i) * 8;
       const angle = side * (20 + seeded(seed + 630, i) * 60);
-      const hue = style === "eucalyptus" ? 160 : 140;
+      const hue = style === "eucalyptus" ? 150 : 132;
 
       const d = roundLeaf(cx, cy, r, angle);
       if (!d) continue;
 
       result.push(
         <path key={`fill${i}`} d={d}
-          fill={`hsl(${hue} 28% 44% / 0.35)`}
-          stroke={`hsl(${hue} 22% 34% / 0.25)`}
+          fill={`hsl(${hue} 32% 32% / 0.45)`}
+          stroke={`hsl(${hue} 26% 24% / 0.3)`}
           strokeWidth="0.5"
         />
       );
@@ -446,14 +446,14 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
 
       const branchPaths = thinBranch(gx, gy, tipX, tipY, seed, i);
-      const hue = style === "eucalyptus" ? 152 : 135;
+      const hue = style === "eucalyptus" ? 148 : 128;
 
       result.push(
         <g key={`branch${i}`} opacity="0.45">
           {branchPaths.map((item, j) => (
             <path key={j} d={item.d}
-              fill={item.isStem ? "none" : `hsl(${hue} 26% 42% / 0.3)`}
-              stroke={`hsl(${hue} 24% 36%)`}
+              fill={item.isStem ? "none" : `hsl(${hue} 30% 32% / 0.4)`}
+              stroke={`hsl(${hue} 28% 26%)`}
               strokeWidth={item.isStem ? "0.7" : "0.3"}
               strokeLinecap="round"
             />
@@ -543,7 +543,7 @@ const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = cy - Math.cos(rad) * len;
       const width = 4 + seeded(seed + 2040, i) * 3;
 
-      const hue = style === "eucalyptus" ? 158 : style === "wild" ? 125 : 138;
+      const hue = style === "eucalyptus" ? 150 : style === "wild" ? 120 : 130;
       const d = pointedLeaf(cx, cy, tipX, tipY, width);
       if (!d) continue;
 
@@ -552,8 +552,8 @@ const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`fa${i}`}>
-          <path d={d} fill={`hsl(${hue} 28% 40% / 0.5)`} stroke={`hsl(${hue} 22% 30% / 0.3)`} strokeWidth="0.5" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} 20% 32% / 0.35)`} strokeWidth="0.4" />
+          <path d={d} fill={`hsl(${hue} 32% 30% / 0.55)`} stroke={`hsl(${hue} 26% 22% / 0.35)`} strokeWidth="0.5" />
+          <path d={midrib} fill="none" stroke={`hsl(${hue} 24% 24% / 0.4)`} strokeWidth="0.4" />
         </g>
       );
     }
