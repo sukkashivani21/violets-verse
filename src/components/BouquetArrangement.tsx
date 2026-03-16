@@ -552,8 +552,8 @@ const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <g key={`fa${i}`}>
-          <path d={d} fill={`hsl(${hue} 28% 40% / 0.5)`} stroke={`hsl(${hue} 22% 30% / 0.3)`} strokeWidth="0.5" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} 20% 32% / 0.35)`} strokeWidth="0.4" />
+          <path d={d} fill={`hsl(${hue} 32% 30% / 0.55)`} stroke={`hsl(${hue} 26% 22% / 0.35)`} strokeWidth="0.5" />
+          <path d={midrib} fill="none" stroke={`hsl(${hue} 24% 24% / 0.4)`} strokeWidth="0.4" />
         </g>
       );
     }
