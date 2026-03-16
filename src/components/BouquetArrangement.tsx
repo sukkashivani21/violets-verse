@@ -19,46 +19,50 @@ const seeded = (seed: number, n: number) => {
   return x - Math.floor(x);
 };
 
-/* ── Dome arrangement: flowers packed in overlapping arcs ── */
+/* ── Grid-like arrangement: flowers placed side-by-side, no overlap, no gaps ── */
 const generateBouquetSlots = (seed: number, count: number) => {
   const slots: { x: number; y: number; z: number }[] = [];
   const cx = 50;
-  const cy = 48;
+  const cy = 46;
 
   if (count === 1) {
     slots.push({ x: cx, y: cy, z: 30 });
     return slots;
   }
 
-  slots.push({ x: cx + (seeded(seed, 0) - 0.5) * 4, y: cy + (seeded(seed, 1) - 0.5) * 3, z: 30 });
+  // Use a honeycomb-style grid that fills from top to bottom
+  // Determine rows and columns based on count
+  const cols = count <= 2 ? 2 : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : 4;
+  const rows = Math.ceil(count / cols);
+  
+  const spacingX = 24; // horizontal spacing between flowers
+  const spacingY = 18; // vertical spacing between rows
+  const totalW = (cols - 1) * spacingX;
+  const totalH = (rows - 1) * spacingY;
+  const startX = cx - totalW / 2;
+  const startY = cy - totalH / 2;
 
-  let placed = 1;
-  let ring = 1;
-  while (placed < count) {
-    const ringCount = Math.min(count - placed, 3 + ring * 2);
-    const radius = 5 + ring * 6 + seeded(seed + 5, ring) * 2;
-    const fanAngle = Math.min(160, 90 + ring * 22 + seeded(seed + 2, ring) * 18);
-    const startAngle = -fanAngle / 2;
-    const angleOffset = seeded(seed + 20, ring) * 18;
+  let placed = 0;
+  for (let row = 0; row < rows && placed < count; row++) {
+    const colsInRow = row === rows - 1 ? count - placed : cols;
+    const rowOffset = (row % 2 === 1) ? spacingX * 0.35 : 0; // honeycomb offset
+    const rowW = (colsInRow - 1) * spacingX;
+    const rowStartX = cx - rowW / 2 + rowOffset * (seeded(seed + 50, row) - 0.5);
 
-    for (let i = 0; i < ringCount && placed < count; i++) {
-      const t = ringCount > 1 ? i / (ringCount - 1) : 0.5;
-      const angle = (startAngle + t * fanAngle + angleOffset) * (Math.PI / 180);
-      const bx = cx + Math.sin(angle) * radius;
-      const by = cy - Math.cos(angle) * radius * 0.55;
-      const jx = (seeded(seed + 200, placed * 3) - 0.5) * 5;
-      const jy = (seeded(seed + 300, placed * 3 + 1) - 0.5) * 4;
-
+    for (let col = 0; col < colsInRow && placed < count; col++) {
+      const jx = (seeded(seed + 200, placed * 3) - 0.5) * 3;
+      const jy = (seeded(seed + 300, placed * 3 + 1) - 0.5) * 2;
+      
       slots.push({
-        x: Math.max(14, Math.min(86, bx + jx)),
-        y: Math.max(16, Math.min(58, by + jy)),
-        z: 25 + ring * 2 + Math.round(seeded(seed + 400, placed) * 3),
+        x: Math.max(15, Math.min(85, rowStartX + col * spacingX + jx)),
+        y: Math.max(18, Math.min(62, startY + row * spacingY + jy)),
+        z: 25 + row * 2 + Math.round(seeded(seed + 400, placed) * 3),
       });
       placed++;
     }
-    ring++;
   }
 
+  // Gentle shuffle to add variety while keeping structure
   const indices = slots.map((_, i) => i);
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(seeded(seed + 999, i) * (i + 1));
