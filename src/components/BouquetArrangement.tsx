@@ -35,8 +35,8 @@ const generateBouquetSlots = (seed: number, count: number) => {
   const cols = count <= 2 ? 2 : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : 4;
   const rows = Math.ceil(count / cols);
   
-  const spacingX = 24; // horizontal spacing between flowers
-  const spacingY = 18; // vertical spacing between rows
+  const spacingX = 20; // tighter horizontal spacing
+  const spacingY = 15; // tighter vertical spacing
   const totalW = (cols - 1) * spacingX;
   const totalH = (rows - 1) * spacingY;
   const startX = cx - totalW / 2;
