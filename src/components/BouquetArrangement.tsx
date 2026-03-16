@@ -446,7 +446,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
 
       const branchPaths = thinBranch(gx, gy, tipX, tipY, seed, i);
-      const hue = style === "eucalyptus" ? 152 : 135;
+      const hue = style === "eucalyptus" ? 148 : 128;
 
       result.push(
         <g key={`branch${i}`} opacity="0.45">
