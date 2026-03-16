@@ -363,9 +363,9 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
       const width = style === "eucalyptus" ? 10 + seeded(seed + 150, i) * 8 : 12 + seeded(seed + 150, i) * 14;
 
-      const hue = style === "eucalyptus" ? 158 : style === "wild" ? 125 : 138;
-      const sat = 25 + seeded(seed + 200, i) * 20;
-      const light = 34 + seeded(seed + 250, i) * 16;
+      const hue = style === "eucalyptus" ? 152 : style === "wild" ? 120 : 130;
+      const sat = 30 + seeded(seed + 200, i) * 25;
+      const light = 22 + seeded(seed + 250, i) * 22;
 
       const leafSeed = seed + 3000 + i * 17;
       const d = style === "eucalyptus"
