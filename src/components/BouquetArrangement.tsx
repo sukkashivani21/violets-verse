@@ -274,10 +274,10 @@ const BouquetArrangement = ({
     return ordered.map((flower, i) => {
       const slot = slots[i];
       const centerOffset = (slot.x - 50) / 50;
-      const tiltBase = centerOffset * 12;
-      const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 10;
+      const tiltBase = centerOffset * 8;
+      const tiltJ = (seeded(layoutSeed + 77, i) - 0.5) * 6;
       const rotate = tiltBase + tiltJ;
-      const scaleBase = 1.05 + seeded(layoutSeed + 99, i) * 0.15;
+      const scaleBase = 1.0;
 
       return {
         x: slot.x,
