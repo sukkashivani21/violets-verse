@@ -398,7 +398,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = gy - Math.cos(angle) * len;
 
       const frondPaths = fernFrond(gx, gy, tipX, tipY, seed, i);
-      const hue = style === "eucalyptus" ? 155 : 130;
+      const hue = style === "eucalyptus" ? 148 : 125;
 
       result.push(
         <g key={`fern${i}`} opacity="0.5">
