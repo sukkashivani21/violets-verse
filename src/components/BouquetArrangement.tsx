@@ -429,8 +429,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
 
       result.push(
         <path key={`fill${i}`} d={d}
-          fill={`hsl(${hue} 28% 44% / 0.35)`}
-          stroke={`hsl(${hue} 22% 34% / 0.25)`}
+          fill={`hsl(${hue} 32% 32% / 0.45)`}
+          stroke={`hsl(${hue} 26% 24% / 0.3)`}
           strokeWidth="0.5"
         />
       );
