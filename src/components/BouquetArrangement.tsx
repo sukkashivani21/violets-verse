@@ -322,7 +322,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const sat = 45 + seeded(seed + 530, i) * 20;
       const light = 20 + seeded(seed + 540, i) * 14;
 
-      const d = sketchyLeafPath(gx, gy, tipX, tipY, width, seed + 5000 + i * 11);
+      const d = smoothLeafPath(gx, gy, tipX, tipY, width, seed + 5000 + i * 11);
       if (!d) continue;
       const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 5500 + i * 13);
 
