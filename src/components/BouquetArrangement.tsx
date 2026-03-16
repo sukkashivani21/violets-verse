@@ -23,7 +23,7 @@ const seeded = (seed: number, n: number) => {
 const generateBouquetSlots = (seed: number, count: number) => {
   const slots: { x: number; y: number; z: number }[] = [];
   const cx = 50;
-  const cy = 42;
+  const cy = 48;
 
   if (count === 1) {
     slots.push({ x: cx, y: cy, z: 30 });
