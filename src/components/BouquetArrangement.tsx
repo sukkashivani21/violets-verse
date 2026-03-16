@@ -78,8 +78,8 @@ const f = (v: number) => v.toFixed(1);
 const wobble = (v: number, amt: number, s: number, i: number) =>
   v + (seeded(s, i) - 0.5) * amt;
 
-// Multi-segment wobbly leaf outline with serrated edges and asymmetry
-const sketchyLeafPath = (
+// Smooth leaf outline — gentle curves without serration
+const smoothLeafPath = (
   bx: number, by: number, tipX: number, tipY: number, width: number, leafSeed: number
 ) => {
   const dx = tipX - bx, dy = tipY - by;
@@ -88,36 +88,21 @@ const sketchyLeafPath = (
   const ux = dx / len, uy = dy / len;
   const nx = -uy, ny = ux;
 
-  const wL = width * (0.9 + seeded(leafSeed, 0) * 0.25);
-  const wR = width * (0.9 + seeded(leafSeed + 1, 0) * 0.25);
-  const segments = 8;
-  const leftPts: [number, number][] = [];
-  const rightPts: [number, number][] = [];
+  const wL = width * (0.95 + seeded(leafSeed, 0) * 0.1);
+  const wR = width * (0.95 + seeded(leafSeed + 1, 0) * 0.1);
 
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const profile = Math.sin(t * Math.PI) * (t < 0.35 ? t / 0.35 : 1) * Math.pow(1 - t * 0.15, 1.5);
-    const serL = 1 + Math.sin(t * 14 + seeded(leafSeed + 10, i) * 6) * 0.08;
-    const serR = 1 + Math.sin(t * 14 + seeded(leafSeed + 20, i) * 6) * 0.08;
-    const px = bx + dx * t, py = by + dy * t;
-    const wob = len * 0.012;
-    leftPts.push([px + nx * wL * profile * serL + wobble(0, wob, leafSeed + 30, i), py + ny * wL * profile * serL + wobble(0, wob, leafSeed + 40, i)]);
-    rightPts.push([px - nx * wR * profile * serR + wobble(0, wob, leafSeed + 50, i), py - ny * wR * profile * serR + wobble(0, wob, leafSeed + 60, i)]);
-  }
+  // Control points for smooth cubic bezier leaf shape
+  const bulgeT = 0.3 + seeded(leafSeed + 2, 0) * 0.1; // where leaf is widest
+  const c1Lx = bx + dx * bulgeT + nx * wL * 1.2;
+  const c1Ly = by + dy * bulgeT + ny * wL * 1.2;
+  const c2Lx = bx + dx * 0.75 + nx * wL * 0.4;
+  const c2Ly = by + dy * 0.75 + ny * wL * 0.4;
+  const c1Rx = bx + dx * 0.75 - nx * wR * 0.4;
+  const c1Ry = by + dy * 0.75 - ny * wR * 0.4;
+  const c2Rx = bx + dx * bulgeT - nx * wR * 1.2;
+  const c2Ry = by + dy * bulgeT - ny * wR * 1.2;
 
-  let path = `M${f(bx)} ${f(by)}`;
-  for (let i = 1; i < leftPts.length; i++) {
-    const [px, py] = leftPts[i];
-    const [prevX, prevY] = leftPts[i - 1];
-    path += ` Q${f((prevX + px) / 2 + wobble(0, 1.5, leafSeed + 100, i))} ${f((prevY + py) / 2 + wobble(0, 1.5, leafSeed + 110, i))},${f(px)} ${f(py)}`;
-  }
-  for (let i = rightPts.length - 1; i >= 0; i--) {
-    const [px, py] = rightPts[i];
-    const ni = Math.min(i + 1, rightPts.length - 1);
-    const [nxP, nyP] = rightPts[ni];
-    path += ` Q${f((nxP + px) / 2 + wobble(0, 1.5, leafSeed + 200, i))} ${f((nyP + py) / 2 + wobble(0, 1.5, leafSeed + 210, i))},${f(px)} ${f(py)}`;
-  }
-  return path + "Z";
+  return `M${f(bx)} ${f(by)} C${f(c1Lx)} ${f(c1Ly)},${f(c2Lx)} ${f(c2Ly)},${f(tipX)} ${f(tipY)} C${f(c1Rx)} ${f(c1Ry)},${f(c2Rx)} ${f(c2Ry)},${f(bx)} ${f(by)}Z`;
 };
 
 // Simple leaf for small elements, sketchy for larger ones
