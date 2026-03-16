@@ -9,9 +9,9 @@ interface BouquetArrangementProps {
 }
 
 const sizeMap = {
-  sm: { container: "w-72 h-80", flower: 90 },
-  md: { container: "w-[22rem] h-[26rem]", flower: 115 },
-  lg: { container: "w-[26rem] h-[30rem]", flower: 130 },
+  sm: { container: "w-80 h-[22rem]", flower: 105 },
+  md: { container: "w-[24rem] h-[28rem]", flower: 135 },
+  lg: { container: "w-[28rem] h-[32rem]", flower: 155 },
 };
 
 const seeded = (seed: number, n: number) => {
@@ -35,8 +35,8 @@ const generateBouquetSlots = (seed: number, count: number) => {
   const cols = count <= 2 ? 2 : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : 4;
   const rows = Math.ceil(count / cols);
   
-  const spacingX = 24; // horizontal spacing between flowers
-  const spacingY = 18; // vertical spacing between rows
+  const spacingX = 20; // tighter horizontal spacing
+  const spacingY = 15; // tighter vertical spacing
   const totalW = (cols - 1) * spacingX;
   const totalH = (rows - 1) * spacingY;
   const startX = cx - totalW / 2;
@@ -78,8 +78,8 @@ const f = (v: number) => v.toFixed(1);
 const wobble = (v: number, amt: number, s: number, i: number) =>
   v + (seeded(s, i) - 0.5) * amt;
 
-// Multi-segment wobbly leaf outline with serrated edges and asymmetry
-const sketchyLeafPath = (
+// Smooth leaf outline — gentle curves without serration
+const smoothLeafPath = (
   bx: number, by: number, tipX: number, tipY: number, width: number, leafSeed: number
 ) => {
   const dx = tipX - bx, dy = tipY - by;
@@ -88,36 +88,21 @@ const sketchyLeafPath = (
   const ux = dx / len, uy = dy / len;
   const nx = -uy, ny = ux;
 
-  const wL = width * (0.9 + seeded(leafSeed, 0) * 0.25);
-  const wR = width * (0.9 + seeded(leafSeed + 1, 0) * 0.25);
-  const segments = 8;
-  const leftPts: [number, number][] = [];
-  const rightPts: [number, number][] = [];
+  const wL = width * (0.95 + seeded(leafSeed, 0) * 0.1);
+  const wR = width * (0.95 + seeded(leafSeed + 1, 0) * 0.1);
 
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const profile = Math.sin(t * Math.PI) * (t < 0.35 ? t / 0.35 : 1) * Math.pow(1 - t * 0.15, 1.5);
-    const serL = 1 + Math.sin(t * 14 + seeded(leafSeed + 10, i) * 6) * 0.08;
-    const serR = 1 + Math.sin(t * 14 + seeded(leafSeed + 20, i) * 6) * 0.08;
-    const px = bx + dx * t, py = by + dy * t;
-    const wob = len * 0.012;
-    leftPts.push([px + nx * wL * profile * serL + wobble(0, wob, leafSeed + 30, i), py + ny * wL * profile * serL + wobble(0, wob, leafSeed + 40, i)]);
-    rightPts.push([px - nx * wR * profile * serR + wobble(0, wob, leafSeed + 50, i), py - ny * wR * profile * serR + wobble(0, wob, leafSeed + 60, i)]);
-  }
+  // Control points for smooth cubic bezier leaf shape
+  const bulgeT = 0.3 + seeded(leafSeed + 2, 0) * 0.1; // where leaf is widest
+  const c1Lx = bx + dx * bulgeT + nx * wL * 1.2;
+  const c1Ly = by + dy * bulgeT + ny * wL * 1.2;
+  const c2Lx = bx + dx * 0.75 + nx * wL * 0.4;
+  const c2Ly = by + dy * 0.75 + ny * wL * 0.4;
+  const c1Rx = bx + dx * 0.75 - nx * wR * 0.4;
+  const c1Ry = by + dy * 0.75 - ny * wR * 0.4;
+  const c2Rx = bx + dx * bulgeT - nx * wR * 1.2;
+  const c2Ry = by + dy * bulgeT - ny * wR * 1.2;
 
-  let path = `M${f(bx)} ${f(by)}`;
-  for (let i = 1; i < leftPts.length; i++) {
-    const [px, py] = leftPts[i];
-    const [prevX, prevY] = leftPts[i - 1];
-    path += ` Q${f((prevX + px) / 2 + wobble(0, 1.5, leafSeed + 100, i))} ${f((prevY + py) / 2 + wobble(0, 1.5, leafSeed + 110, i))},${f(px)} ${f(py)}`;
-  }
-  for (let i = rightPts.length - 1; i >= 0; i--) {
-    const [px, py] = rightPts[i];
-    const ni = Math.min(i + 1, rightPts.length - 1);
-    const [nxP, nyP] = rightPts[ni];
-    path += ` Q${f((nxP + px) / 2 + wobble(0, 1.5, leafSeed + 200, i))} ${f((nyP + py) / 2 + wobble(0, 1.5, leafSeed + 210, i))},${f(px)} ${f(py)}`;
-  }
-  return path + "Z";
+  return `M${f(bx)} ${f(by)} C${f(c1Lx)} ${f(c1Ly)},${f(c2Lx)} ${f(c2Ly)},${f(tipX)} ${f(tipY)} C${f(c1Rx)} ${f(c1Ry)},${f(c2Rx)} ${f(c2Ry)},${f(bx)} ${f(by)}Z`;
 };
 
 // Simple leaf for small elements, sketchy for larger ones
@@ -125,7 +110,7 @@ const pointedLeaf = (bx: number, by: number, tipX: number, tipY: number, width: 
   const dx = tipX - bx, dy = tipY - by;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 1) return "";
-  if (len > 18) return sketchyLeafPath(bx, by, tipX, tipY, width, leafSeed);
+  if (len > 18) return smoothLeafPath(bx, by, tipX, tipY, width, leafSeed);
 
   const ux = dx / len, uy = dy / len;
   const nxW = -uy * width, nyW = ux * width;
@@ -176,78 +161,9 @@ const leafVeins = (bx: number, by: number, tipX: number, tipY: number, width: nu
 };
 
 // Round filler leaf
-const roundLeaf = (cx: number, cy: number, r: number, angle: number) => {
+const _roundLeaf = (cx: number, cy: number, r: number, angle: number) => {
   const rad = (angle * Math.PI) / 180;
-  return sketchyLeafPath(cx, cy, cx + Math.sin(rad) * r * 1.3, cy - Math.cos(rad) * r * 1.3, r * 0.75, Math.round(cx * 7 + cy * 13));
-};
-
-// Fern frond: S-curved stem with alternating sketchy leaflets
-const fernFrond = (startX: number, startY: number, tipX: number, tipY: number, seed: number, idx: number) => {
-  const paths: { d: string; isStem: boolean }[] = [];
-  const dx = tipX - startX, dy = tipY - startY;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 1) return paths;
-  const ux = dx / len, uy = dy / len;
-  const nx = -uy, ny = ux;
-
-  const bow1 = (seeded(seed + 800, idx) - 0.5) * 18;
-  const bow2 = (seeded(seed + 801, idx) - 0.5) * 8;
-  const sc1x = startX + dx * 0.35 + nx * bow1, sc1y = startY + dy * 0.35 + ny * bow1;
-  const sc2x = startX + dx * 0.65 + nx * bow2, sc2y = startY + dy * 0.65 + ny * bow2;
-  paths.push({ d: `M${f(startX)} ${f(startY)} C${f(sc1x)} ${f(sc1y)},${f(sc2x)} ${f(sc2y)},${f(tipX)} ${f(tipY)}`, isStem: true });
-
-  const count = 8 + Math.floor(seeded(seed + 810, idx) * 5);
-  for (let i = 1; i < count; i++) {
-    const t = i / count;
-    const u2 = 1 - t;
-    const px = u2*u2*u2*startX + 3*u2*u2*t*sc1x + 3*u2*t*t*sc2x + t*t*t*tipX;
-    const py = u2*u2*u2*startY + 3*u2*u2*t*sc1y + 3*u2*t*t*sc2y + t*t*t*tipY;
-    const side = i % 2 === 0 ? 1 : -1;
-    const leafLen = (1 - t * 0.7) * len * 0.2 + seeded(seed + 820, idx * 20 + i) * 5;
-    const splay = 0.3 + seeded(seed + 830, idx * 20 + i) * 0.2;
-    const lx = px + (nx * side * (1 - splay) + ux * splay) * leafLen;
-    const ly = py + (ny * side * (1 - splay) + uy * splay) * leafLen;
-    const ld = pointedLeaf(px, py, lx, ly, leafLen * 0.28, seed + 840 + i);
-    if (ld) paths.push({ d: ld, isStem: false });
-  }
-  return paths;
-};
-
-// Thin branchy leaf with organic S-curves
-const thinBranch = (startX: number, startY: number, tipX: number, tipY: number, seed: number, idx: number) => {
-  const paths: { d: string; isStem: boolean }[] = [];
-  const dx = tipX - startX, dy = tipY - startY;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  if (len < 1) return paths;
-  const ux = dx / len, uy = dy / len;
-  const nx = -uy, ny = ux;
-
-  const bow1 = (seeded(seed + 900, idx) - 0.3) * 18;
-  const bow2 = (seeded(seed + 901, idx) - 0.7) * 14;
-  const c1x = startX + dx * 0.33 + nx * bow1, c1y = startY + dy * 0.33 + ny * bow1;
-  const c2x = startX + dx * 0.66 + nx * bow2, c2y = startY + dy * 0.66 + ny * bow2;
-  paths.push({ d: `M${f(startX)} ${f(startY)} C${f(c1x)} ${f(c1y)},${f(c2x)} ${f(c2y)},${f(tipX)} ${f(tipY)}`, isStem: true });
-
-  const count = 5 + Math.floor(seeded(seed + 910, idx) * 4);
-  for (let i = 1; i <= count; i++) {
-    const t = i / (count + 1);
-    const u2 = 1 - t;
-    const px = u2*u2*u2*startX + 3*u2*u2*t*c1x + 3*u2*t*t*c2x + t*t*t*tipX;
-    const py = u2*u2*u2*startY + 3*u2*u2*t*c1y + 3*u2*t*t*c2y + t*t*t*tipY;
-    const side = i % 2 === 0 ? 1 : -1;
-    const leafSize = 6 + seeded(seed + 920, idx * 10 + i) * 7;
-    const splay = 0.28 + seeded(seed + 930, idx * 10 + i) * 0.22;
-    const lx = px + (nx * side * (1 - splay) + ux * splay) * leafSize;
-    const ly = py + (ny * side * (1 - splay) + uy * splay) * leafSize;
-    const ld = pointedLeaf(px, py, lx, ly, leafSize * 0.36, seed + 940 + i);
-    if (ld) paths.push({ d: ld, isStem: false });
-  }
-  return paths;
-};
-
-// Tropical long leaf — wider, sketchy outline
-const tropicalLeaf = (bx: number, by: number, tipX: number, tipY: number, width: number, leafSeed = 0) => {
-  return sketchyLeafPath(bx, by, tipX, tipY, width * 1.1, leafSeed);
+  return smoothLeafPath(cx, cy, cx + Math.sin(rad) * r * 1.3, cy - Math.cos(rad) * r * 1.3, r * 0.75, Math.round(cx * 7 + cy * 13));
 };
 
 const BouquetArrangement = ({
@@ -376,7 +292,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const light = 18 + seeded(seed + 250, i) * 18;
 
       const leafSeed = seed + 3000 + i * 17;
-      const d = sketchyLeafPath(gx, gy, tipX, tipY, width, leafSeed);
+      const d = smoothLeafPath(gx, gy, tipX, tipY, width, leafSeed);
       if (!d) continue;
 
       const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 4000 + i * 13);
@@ -406,7 +322,7 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
       const sat = 45 + seeded(seed + 530, i) * 20;
       const light = 20 + seeded(seed + 540, i) * 14;
 
-      const d = sketchyLeafPath(gx, gy, tipX, tipY, width, seed + 5000 + i * 11);
+      const d = smoothLeafPath(gx, gy, tipX, tipY, width, seed + 5000 + i * 11);
       if (!d) continue;
       const veins = leafVeins(gx, gy, tipX, tipY, width, seed + 5500 + i * 13);
 
@@ -498,44 +414,6 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
           </g>
         );
       }
-    }
-
-    return result;
-  }, [seed, style]);
-
-  return <g>{elements}</g>;
-};
-
-/* ── Front accent leaves peeking between flowers ── */
-const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
-  const elements = useMemo(() => {
-    const result: JSX.Element[] = [];
-    const count = style === "wild" ? 7 : 5;
-
-    for (let i = 0; i < count; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const cx = 120 + side * (28 + seeded(seed + 2000, i) * 55);
-      const cy = 55 + seeded(seed + 2010, i) * 65;
-      const len = 14 + seeded(seed + 2020, i) * 12;
-      const angle = side * (30 + seeded(seed + 2030, i) * 50);
-      const rad = (angle * Math.PI) / 180;
-      const tipX = cx + Math.sin(rad) * len;
-      const tipY = cy - Math.cos(rad) * len;
-      const width = 4 + seeded(seed + 2040, i) * 3;
-
-      const hue = style === "eucalyptus" ? 150 : style === "wild" ? 120 : 130;
-      const d = pointedLeaf(cx, cy, tipX, tipY, width);
-      if (!d) continue;
-
-      const f = (v: number) => v.toFixed(1);
-      const midrib = `M${f(cx)} ${f(cy)} L${f(cx + (tipX - cx) * 0.85)} ${f(cy + (tipY - cy) * 0.85)}`;
-
-      result.push(
-        <g key={`fa${i}`}>
-          <path d={d} fill={`hsl(${hue} 32% 30% / 0.55)`} stroke={`hsl(${hue} 26% 22% / 0.35)`} strokeWidth="0.5" />
-          <path d={midrib} fill="none" stroke={`hsl(${hue} 24% 24% / 0.4)`} strokeWidth="0.4" />
-        </g>
-      );
     }
 
     return result;
