@@ -9,9 +9,9 @@ interface BouquetArrangementProps {
 }
 
 const sizeMap = {
-  sm: { container: "w-56 h-64", flower: 56 },
-  md: { container: "w-72 h-80", flower: 68 },
-  lg: { container: "w-80 h-[22rem]", flower: 78 },
+  sm: { container: "w-56 h-64", flower: 66 },
+  md: { container: "w-72 h-80", flower: 80 },
+  lg: { container: "w-80 h-[22rem]", flower: 90 },
 };
 
 const seeded = (seed: number, n: number) => {
