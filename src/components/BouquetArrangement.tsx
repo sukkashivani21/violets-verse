@@ -404,8 +404,8 @@ const BackFoliage = ({ seed, style }: { seed: number; style: string }) => {
         <g key={`fern${i}`} opacity="0.5">
           {frondPaths.map((item, j) => (
             <path key={j} d={item.d}
-              fill={item.isStem ? "none" : `hsl(${hue} 30% 40% / 0.3)`}
-              stroke={`hsl(${hue} 28% 38%)`}
+              fill={item.isStem ? "none" : `hsl(${hue} 35% 30% / 0.4)`}
+              stroke={`hsl(${hue} 32% 28%)`}
               strokeWidth={item.isStem ? "0.8" : "0.4"}
               strokeLinecap="round"
             />
