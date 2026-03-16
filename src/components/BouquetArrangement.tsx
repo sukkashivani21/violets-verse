@@ -543,7 +543,7 @@ const FrontAccents = ({ seed, style }: { seed: number; style: string }) => {
       const tipY = cy - Math.cos(rad) * len;
       const width = 4 + seeded(seed + 2040, i) * 3;
 
-      const hue = style === "eucalyptus" ? 158 : style === "wild" ? 125 : 138;
+      const hue = style === "eucalyptus" ? 150 : style === "wild" ? 120 : 130;
       const d = pointedLeaf(cx, cy, tipX, tipY, width);
       if (!d) continue;
 
